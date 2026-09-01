@@ -486,8 +486,11 @@ const createAvatarFallback = (name: string, theme: CredentialThemeConfig) => {
         </linearGradient>
       </defs>
       <rect width="500" height="500" rx="90" fill="url(#avGrad)" />
-      <circle cx="410" cy="90" r="140" fill="${theme.brandColor}" opacity="0.25" />
-      <circle cx="80" cy="430" r="160" fill="${theme.brandColor}" opacity="0.2" />
+      <!-- Premium Concentric Geometric Rings -->
+      <circle cx="410" cy="90" r="130" stroke="${theme.brandColor}" stroke-width="5" fill="none" opacity="0.3" />
+      <circle cx="410" cy="90" r="90" stroke="${theme.specialtyColor}" stroke-width="4" stroke-dasharray="10 16" fill="none" opacity="0.4" />
+      <circle cx="80" cy="430" r="140" stroke="${theme.brandColor}" stroke-width="5" fill="none" opacity="0.25" />
+      <circle cx="80" cy="430" r="95" stroke="${theme.specialtyColor}" stroke-width="4" stroke-dasharray="8 14" fill="none" opacity="0.35" />
       <text x="250" y="270" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="130" font-weight="900" fill="${textColor}">
         ${initials}
       </text>
@@ -674,78 +677,63 @@ export const CredentialCardInner = React.forwardRef<HTMLDivElement, CredentialCa
           boxSizing: 'border-box',
         }}
       >
-        {/* Cybernetic Tech Grid & 3D Abstract Geometric Elements */}
+        {/* Smooth Premium Background & Abstract Geometric Accents */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-          {/* Subtle Cyber Data Grid / Mesh */}
-          <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id={`cyberGrid_${theme.id}`} width="30" height="30" patternUnits="userSpaceOnUse">
-                <path
-                  d="M 30 0 L 0 0 0 30"
-                  fill="none"
-                  stroke={theme.isLightMode ? '#c084fc' : theme.id === 'blue' ? '#38bdf8' : theme.brandColor}
-                  strokeWidth="0.5"
-                  opacity={theme.isLightMode ? '0.2' : '0.3'}
-                />
-                <circle
-                  cx="30"
-                  cy="0"
-                  r="1"
-                  fill={theme.isLightMode ? '#9333ea' : theme.id === 'blue' ? '#38bdf8' : theme.brandColor}
-                  opacity={theme.isLightMode ? '0.35' : '0.6'}
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill={`url(#cyberGrid_${theme.id})`} />
-          </svg>
-
-          {/* Top Right 3D Sphere */}
+          {/* Left Mid: Premium Dual Orbital Ring & Geometric Accents */}
           <svg
-            className="absolute -right-10 -top-10 w-48 h-48 sm:w-60 sm:h-60 opacity-90"
-            viewBox="0 0 200 200"
+            className="absolute -left-14 top-1/4 w-44 h-56 sm:w-56 sm:h-72 pointer-events-none opacity-85"
+            viewBox="0 0 200 240"
             fill="none"
           >
             <defs>
-              <radialGradient id={`sphereTop_${theme.id}`} cx="38%" cy="32%" r="65%" fx="32%" fy="28%">
-                {theme.sphereTopStops.map((stop, idx) => (
-                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
-                ))}
+              <linearGradient id={`premLeftGrad_${theme.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={theme.specialtyColor} stopOpacity="0.8" />
+                <stop offset="70%" stopColor={theme.brandColor} stopOpacity="0.35" />
+                <stop offset="100%" stopColor={theme.brandColor} stopOpacity="0.05" />
+              </linearGradient>
+            </defs>
+            {/* Outer Subtle Arc */}
+            <circle cx="80" cy="120" r="85" stroke={`url(#premLeftGrad_${theme.id})`} strokeWidth="1" strokeOpacity="0.35" />
+            {/* Dashed Orbital Circle */}
+            <circle cx="80" cy="120" r="68" stroke={theme.brandColor} strokeWidth="1.2" strokeDasharray="4 6" strokeOpacity="0.55" />
+            {/* Main Solid Ring */}
+            <circle cx="80" cy="120" r="52" stroke={`url(#premLeftGrad_${theme.id})`} strokeWidth="1.75" strokeOpacity="0.8" />
+            {/* Inner Ring */}
+            <circle cx="80" cy="120" r="36" stroke={theme.specialtyColor} strokeWidth="1" strokeOpacity="0.5" />
+            {/* Subtle Crosshair Ticks */}
+            <line x1="80" y1="28" x2="80" y2="38" stroke={theme.brandColor} strokeWidth="1.5" strokeOpacity="0.7" />
+            <line x1="80" y1="202" x2="80" y2="212" stroke={theme.brandColor} strokeWidth="1.5" strokeOpacity="0.7" />
+            <line x1="162" y1="120" x2="172" y2="120" stroke={theme.brandColor} strokeWidth="1.5" strokeOpacity="0.7" />
+            <circle cx="80" cy="52" r="2.5" fill={theme.brandColor} />
+            <circle cx="148" cy="120" r="2" fill={theme.specialtyColor} />
+          </svg>
+
+          {/* Bottom Right: Premium Nested Geometric Rings & Halo */}
+          <svg
+            className="absolute -right-12 -bottom-12 w-52 h-56 sm:w-64 sm:h-70 pointer-events-none opacity-85"
+            viewBox="0 0 220 220"
+            fill="none"
+          >
+            <defs>
+              <linearGradient id={`premBottomGrad_${theme.id}`} x1="100%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stopColor={theme.brandColor} stopOpacity="0.8" />
+                <stop offset="60%" stopColor={theme.specialtyColor} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={theme.brandColor} stopOpacity="0.05" />
+              </linearGradient>
+              <radialGradient id={`premBottomGlow_${theme.id}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor={theme.specialtyColor} stopOpacity="0.2" />
+                <stop offset="70%" stopColor={theme.brandColor} stopOpacity="0.04" />
+                <stop offset="100%" stopColor={theme.brandColor} stopOpacity="0" />
               </radialGradient>
             </defs>
-            <circle cx="100" cy="100" r="70" fill={`url(#sphereTop_${theme.id})`} />
-          </svg>
-
-          {/* Left Side 3D Torus Ring */}
-          <svg
-            className="absolute -left-12 top-1/4 w-40 h-52 sm:w-52 sm:h-68 opacity-85"
-            viewBox="0 0 160 220"
-            fill="none"
-          >
-            <ellipse
-              cx="60"
-              cy="130"
-              rx="55"
-              ry="55"
-              stroke={theme.torusStroke}
-              strokeWidth="8"
-              fill="none"
-            />
-          </svg>
-
-          {/* Bottom Right 3D Sphere */}
-          <svg
-            className="absolute -right-12 -bottom-12 w-48 h-52 sm:w-60 sm:h-64 opacity-85"
-            viewBox="0 0 200 200"
-            fill="none"
-          >
-            <defs>
-              <radialGradient id={`sphereBottom_${theme.id}`} cx="35%" cy="30%" r="70%" fx="30%" fy="25%">
-                {theme.sphereBottomStops.map((stop, idx) => (
-                  <stop key={idx} offset={stop.offset} stopColor={stop.color} />
-                ))}
-              </radialGradient>
-            </defs>
-            <circle cx="70" cy="120" r="56" fill={`url(#sphereBottom_${theme.id})`} />
+            <circle cx="110" cy="110" r="75" fill={`url(#premBottomGlow_${theme.id})`} />
+            <circle cx="110" cy="110" r="95" stroke={`url(#premBottomGrad_${theme.id})`} strokeWidth="1" strokeOpacity="0.3" />
+            <circle cx="110" cy="110" r="78" stroke={theme.brandColor} strokeWidth="1.2" strokeDasharray="3 5" strokeOpacity="0.55" />
+            <circle cx="110" cy="110" r="60" stroke={`url(#premBottomGrad_${theme.id})`} strokeWidth="1.5" strokeOpacity="0.8" />
+            <circle cx="110" cy="110" r="42" stroke={theme.specialtyColor} strokeWidth="1" strokeOpacity="0.45" />
+            <circle cx="110" cy="110" r="26" stroke={theme.brandColor} strokeWidth="1.2" strokeDasharray="2 4" strokeOpacity="0.65" />
+            <circle cx="110" cy="32" r="2" fill={theme.brandColor} />
+            <circle cx="188" cy="110" r="2.5" fill={theme.specialtyColor} />
           </svg>
 
           {/* Soft Ambient Light Glow */}
