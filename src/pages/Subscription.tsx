@@ -221,7 +221,7 @@ export default function Subscription() {
                 </p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center shrink-0 min-w-[180px]">
+              <div className="subscription-trial-counter bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center shrink-0 min-w-[180px]">
                 <span className="text-xs text-sky-100 font-bold uppercase tracking-wider block mb-1">Dias de Teste Restantes</span>
                 <span className="text-4xl font-black text-white">{subDetails.trialDaysRemaining}</span>
                 <span className="text-xs text-sky-200 block font-medium mt-1">de 60 dias liberados</span>
