@@ -70,7 +70,7 @@ const getCurrentSaoPauloMonthKey = () => {
 
 type Tab = 
   | 'profile' | 'security' | 'notifications' | 'payments' | 'privacy' | 'theme' // Patient tabs
-  | 'profile_prof' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
+  | 'profile_prof' | 'credential' | 'clinic' | 'subscription' | 'earnings'; // Physio tabs
 
 export default function Profile() {
   const { user, profile, subscription, theme: currentThemeId, language: currentLang, loading: authLoading, refreshProfile, signOut, updateTheme, updateLanguage } = useAuth();
@@ -1161,6 +1161,7 @@ export default function Profile() {
 
   const physioTabs = [
     { id: 'profile_prof', label: t('nav.profile'), icon: User, colorClass: '!text-sky-500 !stroke-sky-500 dark:!text-sky-300 dark:!stroke-sky-300' },
+    { id: 'credential', label: 'Meu Credencial Profissional', icon: ShieldCheck, colorClass: '!text-indigo-500 !stroke-indigo-500 dark:!text-indigo-300 dark:!stroke-indigo-300' },
     { id: 'clinic', label: t('clinic.clinic_data'), icon: Building2, colorClass: '!text-blue-500 !stroke-blue-500 dark:!text-blue-300 dark:!stroke-blue-300' },
     { id: 'subscription', label: t('nav.subscription'), icon: Crown, colorClass: '!text-amber-500 !stroke-amber-500 dark:!text-amber-300 dark:!stroke-amber-300' },
     { id: 'earnings', label: t('payments.received'), icon: DollarSign, colorClass: '!text-emerald-500 !stroke-emerald-500 dark:!text-emerald-300 dark:!stroke-emerald-300' },
@@ -1304,15 +1305,43 @@ export default function Profile() {
                       </div>
                     </div>
 
+                    {/* Quick Banner to Credencial Profissional */}
                     {isPhysio && (
-                      <ProfessionalCredentialCard
-                        profile={userData || profile}
-                        isPro={isPro}
-                        appointmentsCount={credentialStats.appointmentsCount}
-                        ratingAverage={credentialStats.ratingAverage}
-                        reviewsCount={credentialStats.reviewsCount}
-                        variant="full"
-                      />
+                      <div 
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate('/profile?tab=credential')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate('/profile?tab=credential');
+                          }
+                        }}
+                        className="group cursor-pointer p-6 bg-gradient-to-r from-sky-900/40 via-indigo-900/30 to-emerald-900/30 border border-sky-400/30 rounded-[2.25rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 hover:border-sky-400/60 hover:bg-slate-900/80 transition-all shadow-lg hover:shadow-sky-500/10"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shrink-0 group-hover:scale-105 transition-transform shadow-md">
+                            <ShieldCheck size={28} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-white font-black text-base tracking-tight">
+                                Meu Credencial Profissional
+                              </h4>
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                                Verificada
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-400 font-medium mt-1">
+                              Acesse sua carteira digital oficial com QR Code, 4 temas e download automático.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-end sm:self-center px-4 py-2.5 rounded-xl bg-sky-500/10 border border-sky-400/20 text-xs font-black uppercase tracking-wider text-sky-300 group-hover:bg-sky-500 group-hover:text-white group-hover:border-transparent transition-all">
+                          <span>Acessar Credencial</span>
+                          <ExternalLink size={14} />
+                        </div>
+                      </div>
                     )}
 
                     {/* Profile Form */}
@@ -1702,6 +1731,59 @@ export default function Profile() {
                         </div>
                       </form>
                     </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'credential' && isPhysio && (
+                  <motion.div
+                    key="credential"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    {/* Header Card for Credencial Profissional */}
+                    <div className="bg-slate-900/50 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-white/10 shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/10 rounded-full -mr-40 -mt-40 opacity-50 pointer-events-none" />
+
+                      <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="space-y-2">
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-400 text-[11px] font-black uppercase tracking-widest">
+                            <ShieldCheck size={14} />
+                            Documento Profissional Verificado
+                          </div>
+                          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                            Meu Credencial Profissional
+                          </h2>
+                          <p className="text-sm text-slate-400 font-medium max-w-xl leading-relaxed">
+                            Sua identidade digital profissional oficial com foto, QR Code para validação pública, múltiplos temas e exportação para download ou compartilhamento.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-center">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registro</p>
+                            <p className="text-xs sm:text-sm font-black text-white">CREFITO {userData?.crefito || profile?.crefito || 'Verificado'}</p>
+                          </div>
+                          {isPro && (
+                            <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 border border-white/20">
+                              <Crown size={14} fill="currentColor" />
+                              Membro Pro
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* The Full Credential Component */}
+                    <ProfessionalCredentialCard
+                      profile={userData || profile}
+                      isPro={isPro}
+                      appointmentsCount={credentialStats.appointmentsCount}
+                      ratingAverage={credentialStats.ratingAverage}
+                      reviewsCount={credentialStats.reviewsCount}
+                      variant="full"
+                    />
                   </motion.div>
                 )}
 
