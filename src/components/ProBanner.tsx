@@ -7,7 +7,7 @@ export default function ProBanner() {
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden bg-slate-900 border border-blue-500/30 rounded-[2.5rem] shadow-2xl shadow-blue-900/20 group"
+      className="subscription-promo-banner relative overflow-hidden bg-slate-900 border border-blue-500/30 rounded-[2.5rem] shadow-2xl shadow-blue-900/20 group"
     >
       {/* Premium Glow Background */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-600/10 group-hover:scale-105 transition-transform duration-700" />
@@ -31,7 +31,7 @@ export default function ProBanner() {
         
         <Link 
           to="/subscription" 
-          className="w-full md:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 group/btn whitespace-nowrap active:scale-95"
+          className="subscription-on-color w-full md:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3 group/btn whitespace-nowrap active:scale-95"
         >
           Ver planos profissionais
           <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />

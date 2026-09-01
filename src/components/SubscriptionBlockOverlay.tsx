@@ -21,7 +21,7 @@ export const SubscriptionBlockOverlay: React.FC<SubscriptionBlockOverlayProps> =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-slate-100 text-center relative overflow-hidden animate-scale-up">
+      <div className="subscription-theme subscription-card bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-slate-100 text-center relative overflow-hidden animate-scale-up">
         {/* Top Accent Line */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-sky-500 to-indigo-500" />
 
@@ -60,7 +60,7 @@ export const SubscriptionBlockOverlay: React.FC<SubscriptionBlockOverlayProps> =
           {onReactivate && (
             <button
               onClick={onReactivate}
-              className="w-full py-3.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="subscription-on-color w-full py-3.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               <RefreshCw size={16} /> Reativar Minha Assinatura
             </button>
@@ -69,7 +69,7 @@ export const SubscriptionBlockOverlay: React.FC<SubscriptionBlockOverlayProps> =
           {onOpenCardUpdate && (
             <button
               onClick={onOpenCardUpdate}
-              className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="subscription-primary-dark w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               <CreditCard size={16} /> Alterar Cartão de Crédito
             </button>

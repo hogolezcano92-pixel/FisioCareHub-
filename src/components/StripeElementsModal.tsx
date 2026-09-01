@@ -4,6 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { X, CreditCard, Lock, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { getStripeConfig, createSetupIntent, createSubscriptionWithPaymentMethod, updateSubscriptionPaymentMethod, fetchSubscriptionDetails, PlanKey, PLANS } from '../services/subscriptionService';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
 
@@ -47,6 +48,8 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
   const [loading, setLoading] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [cardHolderName, setCardHolderName] = useState(userName || '');
+  const { theme } = useAuth();
+  const isLightTheme = theme === 'light';
 
   const planInfo = planKey ? PLANS[planKey] : null;
 
@@ -243,9 +246,9 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-[#1e293b] space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {mode === 'subscribe' && planInfo && (
-        <div className="bg-gradient-to-r from-sky-50 to-indigo-50 p-4 rounded-2xl border border-sky-100 mb-4">
+        <div className="subscription-subtle bg-gradient-to-r from-sky-50 to-indigo-50 p-4 rounded-2xl border border-sky-100 mb-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-extrabold uppercase tracking-wider text-sky-800">Plano Selecionado</span>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -291,10 +294,10 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
               style: {
                 base: {
                   fontSize: '15px',
-                  color: '#0f172a',
+                  color: isLightTheme ? '#0f172a' : '#f8fafc',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   '::placeholder': {
-                    color: '#94a3b8',
+                    color: isLightTheme ? '#64748b' : '#94a3b8',
                   },
                 },
                 invalid: {
@@ -325,7 +328,7 @@ const CardForm: React.FC<FormProps> = ({ userId, userEmail, userName, planKey, m
         <button
           type="submit"
           disabled={!stripe || !cardComplete || loading}
-          className="flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="subscription-on-color flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -377,7 +380,7 @@ export const StripeElementsModal: React.FC<FormProps> = (props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative animate-scale-up">
+      <div className="subscription-theme subscription-card bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative animate-scale-up">
         <button
           onClick={props.onClose}
           className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
@@ -424,7 +427,7 @@ export const StripeElementsModal: React.FC<FormProps> = (props) => {
               <button
                 type="button"
                 onClick={initStripe}
-                className="flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
+                className="subscription-on-color flex-1 py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
               >
                 <RefreshCw size={14} />
                 Tentar Novamente
