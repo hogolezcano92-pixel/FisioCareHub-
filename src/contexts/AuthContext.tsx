@@ -219,26 +219,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         finalProfile = { ...finalProfile, tipo_usuario: 'admin', plano: 'admin', plan_type: 'pro' };
       }
 
-      // Fetch subscription in parallel if profile exists.
-      // Usamos limit(1) para evitar o erro do PostgREST:
-      // "Cannot coerce the result to a single JSON object" quando há mais de uma assinatura ativa.
-      const subPromise = finalProfile
-        ? supabase
+      // O stripe_subscription_id salvo no perfil é a referência autoritativa
+      // da assinatura atual. Buscar apenas "a linha ativa mais recente" pode
+      // selecionar um trial/contrato antigo e fazer o plano anterior prevalecer
+      // sobre o perfil recém-sincronizado pelo backend.
+      const loadCurrentSubscription = async () => {
+        if (!finalProfile) return { data: [], error: null };
+
+        const currentStripeSubscriptionId = finalProfile.stripe_subscription_id;
+        if (currentStripeSubscriptionId) {
+          const exactResult = await supabase
             .from('assinaturas')
             .select('*')
             .eq('user_id', userId)
-            // Trial do Stripe também é uma assinatura válida e deve liberar o
-            // plano imediatamente. Aceitamos ainda "active" para registros
-            // sincronizados diretamente com a nomenclatura do Stripe.
-            .in('status', ['ativo', 'active', 'trialing', 'trial'])
-            .order('data_inicio', { ascending: false })
-            .limit(1)
-        : Promise.resolve({ data: [] });
+            .eq('stripe_subscription_id', currentStripeSubscriptionId)
+            .limit(1);
+
+          if (!exactResult.error && exactResult.data?.length) {
+            return exactResult;
+          }
+
+          if (exactResult.error) {
+            console.warn('[Auth] Não foi possível carregar a assinatura Stripe indicada pelo perfil:', exactResult.error.message);
+          }
+        }
+
+        // Compatibilidade com assinaturas manuais/legadas que ainda não têm
+        // stripe_subscription_id. Esse fallback só é usado quando não existe
+        // uma linha correspondente à referência atual do perfil.
+        return supabase
+          .from('assinaturas')
+          .select('*')
+          .eq('user_id', userId)
+          .in('status', ['ativo', 'active', 'trialing', 'trial'])
+          .order('data_inicio', { ascending: false })
+          .limit(1);
+      };
 
       let subRows: any[] | null = [];
       try {
         const subResult = await withTimeout(
-          subPromise,
+          loadCurrentSubscription(),
           AUTH_QUERY_TIMEOUT_MS,
           'Carregamento da assinatura'
         );
@@ -476,8 +497,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const stripeSubscriptionId = profile?.stripe_subscription_id || subscription?.stripe_subscription_id || null;
-    const localStatus = String(subscription?.status || profile?.subscription_status || '').trim().toLowerCase();
+    const profileStripeSubscriptionId = String(profile?.stripe_subscription_id || '').trim();
+    const rowStripeSubscriptionId = String(subscription?.stripe_subscription_id || '').trim();
+    const rowMatchesCurrentProfile = !profileStripeSubscriptionId || !rowStripeSubscriptionId || profileStripeSubscriptionId === rowStripeSubscriptionId;
+    const stripeSubscriptionId = profileStripeSubscriptionId || (rowMatchesCurrentProfile ? rowStripeSubscriptionId : '') || null;
+    const localStatus = String(
+      (rowMatchesCurrentProfile ? subscription?.status : null) || profile?.subscription_status || ''
+    ).trim().toLowerCase();
     const localHasAccess = ['ativo', 'active', 'trialing', 'trial'].includes(localStatus);
     const accessToken = session?.access_token;
 
