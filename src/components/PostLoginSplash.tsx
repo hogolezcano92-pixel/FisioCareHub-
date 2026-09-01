@@ -81,6 +81,8 @@ export default function PostLoginSplash({
     : isPhysio
       ? `Bem-vindo, Dr. ${displayName}`
       : `Bem-vindo, ${displayName}`;
+  const titleWords = title.split(/\s+/).filter(Boolean);
+  const longTitle = title.length > 28;
 
   const subtitle = isAdmin
     ? 'Sincronizando sua administração premium...'
@@ -361,32 +363,48 @@ export default function PostLoginSplash({
         </motion.p>
 
         <h1
-          className="fch-splash-title mx-auto max-w-4xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.22)] sm:text-5xl lg:text-6xl"
+          className={`fch-splash-title mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-[0.28em] gap-y-1 px-1 font-black leading-[1.08] tracking-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.22)] ${
+            longTitle ? 'text-2xl sm:text-4xl lg:text-5xl' : 'text-3xl sm:text-5xl lg:text-6xl'
+          }`}
           aria-label={title}
         >
-          {splitText(title).map((letter, index) => (
-            <motion.span
-              key={`${letter}-${index}`}
-              className="inline-block"
-              initial={{ opacity: 0, y: 30, scale: 0.58, rotate: -10, filter: 'blur(8px)' }}
-              animate={{
-                opacity: 1,
-                y: [0, index % 2 === 0 ? -3 : 3, 0],
-                scale: 1,
-                rotate: [0, index % 3 === 0 ? 1.2 : -1.2, 0],
-                filter: 'blur(0px)',
-              }}
-              transition={{
-                opacity: { delay: 2.35 + index * 0.025, duration: 0.35 },
-                y: { delay: 2.35 + index * 0.025, duration: 2.8 + (index % 5) * 0.12, repeat: Infinity, ease: 'easeInOut' },
-                rotate: { delay: 2.35 + index * 0.025, duration: 3.2 + (index % 4) * 0.1, repeat: Infinity, ease: 'easeInOut' },
-                scale: { delay: 2.35 + index * 0.025, type: 'spring', stiffness: 520, damping: 17 },
-                filter: { delay: 2.35 + index * 0.025, duration: 0.35 },
-              }}
-            >
-              {letter === ' ' ? '\u00A0' : letter}
-            </motion.span>
-          ))}
+          {titleWords.map((word, wordIndex) => {
+            const previousCharacters = titleWords
+              .slice(0, wordIndex)
+              .reduce((total, currentWord) => total + currentWord.length + 1, 0);
+
+            return (
+              <span key={`${word}-${wordIndex}`} className="inline-flex max-w-full whitespace-nowrap">
+                {splitText(word).map((letter, letterIndex) => {
+                  const animationIndex = previousCharacters + letterIndex;
+
+                  return (
+                    <motion.span
+                      key={`${letter}-${letterIndex}`}
+                      className="inline-block"
+                      initial={{ opacity: 0, y: 30, scale: 0.58, rotate: -10, filter: 'blur(8px)' }}
+                      animate={{
+                        opacity: 1,
+                        y: [0, animationIndex % 2 === 0 ? -3 : 3, 0],
+                        scale: 1,
+                        rotate: [0, animationIndex % 3 === 0 ? 1.2 : -1.2, 0],
+                        filter: 'blur(0px)',
+                      }}
+                      transition={{
+                        opacity: { delay: 2.35 + animationIndex * 0.025, duration: 0.35 },
+                        y: { delay: 2.35 + animationIndex * 0.025, duration: 2.8 + (animationIndex % 5) * 0.12, repeat: Infinity, ease: 'easeInOut' },
+                        rotate: { delay: 2.35 + animationIndex * 0.025, duration: 3.2 + (animationIndex % 4) * 0.1, repeat: Infinity, ease: 'easeInOut' },
+                        scale: { delay: 2.35 + animationIndex * 0.025, type: 'spring', stiffness: 520, damping: 17 },
+                        filter: { delay: 2.35 + animationIndex * 0.025, duration: 0.35 },
+                      }}
+                    >
+                      {letter}
+                    </motion.span>
+                  );
+                })}
+              </span>
+            );
+          })}
         </h1>
 
         <p
