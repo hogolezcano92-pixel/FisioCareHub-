@@ -92,14 +92,15 @@ export async function renderCredentialToBlob(options: CredentialCanvasOptions): 
   let finalQrDataUrl = qrDataUrl;
   if (!finalQrDataUrl || !finalQrDataUrl.startsWith('data:image/')) {
     const targetUrl = publicProfileUrl || 'https://fisiocarehub.app';
+    const qrDark = theme.isLightMode ? (theme.qrDarkColor || '#3b0764') : '#ffffff';
     try {
       finalQrDataUrl = await QRCode.toDataURL(targetUrl, {
         errorCorrectionLevel: 'H',
-        margin: 2,
+        margin: 1,
         width: 600,
         color: {
-          dark: theme.qrDarkColor || '#020617',
-          light: '#ffffff',
+          dark: qrDark,
+          light: '#00000000',
         },
       });
     } catch {
@@ -497,42 +498,27 @@ export async function renderCredentialToBlob(options: CredentialCanvasOptions): 
     ctx.restore();
   }
 
-  // --- Layer 7: Central Validation Card (Glassmorphism + QR Code) ---
-  const valCardW = 680;
-  const valCardH = 470;
-  const valCardX = (width - valCardW) / 2;
-  const valCardY = cardY + 1040;
+  // --- Layer 7: Central QR Code Validation Area (No background box) ---
+  const valCenterY = cardY + 1070;
 
   ctx.save();
-  drawRoundedRect(ctx, valCardX, valCardY, valCardW, valCardH, 44);
-  ctx.fillStyle = theme.qrCardBg;
-  ctx.fill();
-  ctx.strokeStyle = theme.qrCardBorder;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
   // Validation Card Header: "✓ VALIDAR CREDENCIAL"
   ctx.fillStyle = theme.qrHeaderCheck;
   ctx.font = '900 24px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('✓ VALIDAR CREDENCIAL', width / 2, valCardY + 46);
+  ctx.fillText('✓ VALIDAR CREDENCIAL', width / 2, valCenterY);
 
-  // QR Code Box (White rounded background)
-  const qrBoxSize = 250;
+  // QR Code (No background box, drawn directly with transparency)
+  const qrBoxSize = 270;
   const qrBoxX = (width - qrBoxSize) / 2;
-  const qrBoxY = valCardY + 68;
+  const qrBoxY = valCenterY + 28;
 
-  drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 32);
-  ctx.fillStyle = theme.qrBoxBg || '#ffffff';
-  ctx.fill();
-
-  // Draw QR Image inside QR Box
+  // Draw QR Image directly
   if (qrImg && qrImg.naturalWidth > 0) {
-    const qrPad = 16;
-    ctx.drawImage(qrImg, qrBoxX + qrPad, qrBoxY + qrPad, qrBoxSize - qrPad * 2, qrBoxSize - qrPad * 2);
+    ctx.drawImage(qrImg, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize);
   } else {
     // Fallback QR icon/text
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = theme.isLightMode ? '#64748b' : '#94a3b8';
     ctx.font = '800 18px system-ui, -apple-system, sans-serif';
     ctx.fillText('QR CODE', width / 2, qrBoxY + qrBoxSize / 2);
   }
@@ -541,13 +527,13 @@ export async function renderCredentialToBlob(options: CredentialCanvasOptions): 
   ctx.fillStyle = theme.qrIdColor;
   ctx.font = '800 22px system-ui, -apple-system, sans-serif';
   ctx.letterSpacing = '1.5px';
-  ctx.fillText(`ID DA CREDENCIAL - ${credentialCode}`, width / 2, valCardY + 360);
+  ctx.fillText(`ID DA CREDENCIAL - ${credentialCode}`, width / 2, qrBoxY + qrBoxSize + 40);
 
   // Instruction subtitle
   ctx.fillStyle = theme.qrSubColor;
   ctx.font = '600 18px system-ui, -apple-system, sans-serif';
   ctx.letterSpacing = '0.5px';
-  ctx.fillText('Escanear para verificar este perfil', width / 2, valCardY + 395);
+  ctx.fillText('Escanear para verificar este perfil', width / 2, qrBoxY + qrBoxSize + 72);
   ctx.restore();
 
   // --- Layer 8: Footer 3-Column Bar ---
