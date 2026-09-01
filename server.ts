@@ -9,6 +9,7 @@ import Groq from "groq-sdk";
 import axios from "axios";
 import { Resend } from 'resend';
 import { generateEmailHTML, sendTrialStartedEmail, sendSubscriptionPaidEmail, sendSubscriptionFailedEmail } from './src/services/emailService.ts';
+import { sendTrialStartedConfirmationEmailSafe, sendSubscriptionPaidConfirmationEmailSafe } from './src/services/subscriptionEmailHelper.ts';
 import { formatDateBR, formatHourBR } from './src/utils/date.ts';
 import { 
   generateRegistrationOptions, 
@@ -818,6 +819,24 @@ async function startServer() {
           next_billing_date: nextBillingDate,
           last_stripe_sync: new Date().toISOString()
         });
+
+        // Envio seguro e deduplicado do e-mail de início do trial
+        if (isTrial) {
+          const { data: profData } = await supabase.from('perfis').select('email, nome_completo').eq('id', targetUserId).maybeSingle();
+          if (profData?.email) {
+            await sendTrialStartedConfirmationEmailSafe({
+              supabase,
+              userId: targetUserId,
+              email: profData.email,
+              userName: profData.nome_completo,
+              planKey,
+              stripeSubscriptionId: subscription.id,
+              trialStart,
+              trialEnd,
+              nextBillingDate,
+            });
+          }
+        }
       }
     }
 
@@ -880,7 +899,18 @@ async function startServer() {
         }).eq('user_id', profile.id);
 
         if (profile.email && invoice.amount_paid > 0) {
-          await sendSubscriptionPaidEmail(profile.email, profile.nome_completo || 'Profissional', planLabel, amountStr, nextBillingDateStr);
+          await sendSubscriptionPaidConfirmationEmailSafe({
+            supabase,
+            userId: profile.id,
+            email: profile.email,
+            userName: profile.nome_completo,
+            planKey: profile.plan_key || profile.plan_type,
+            stripeSubscriptionId: subscriptionId || profile.stripe_subscription_id,
+            invoiceId: invoice.id,
+            amountPaidCents: invoice.amount_paid,
+            billingDate: new Date(),
+            nextBillingDate: nextBillingDateStr,
+          });
         }
       }
     }
@@ -918,6 +948,35 @@ async function startServer() {
   });
 
   app.use(express.json());
+
+  // Safe Image Proxy for CORS-clean image downloading & credential exports
+  app.get("/api/proxy-image", async (req, res) => {
+    try {
+      const targetUrl = req.query.url as string;
+      if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+        return res.status(400).json({ error: "URL inválida" });
+      }
+
+      const response = await axios.get(targetUrl, {
+        responseType: 'arraybuffer',
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        }
+      });
+
+      const contentType = response.headers['content-type'] || 'image/jpeg';
+      res.set('Content-Type', contentType);
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(Buffer.from(response.data));
+    } catch (err: any) {
+      console.warn('[ProxyImage] Falha ao carregar imagem remota:', err.message);
+      return res.status(502).json({ error: 'Erro ao buscar imagem remota' });
+    }
+  });
 
   // --- Stripe Subscription & 60-Day Trial API Endpoints ---
   app.get("/api/stripe/config", (req, res) => {
@@ -1088,9 +1147,17 @@ async function startServer() {
       currentStep = "enviando_email_boas_vindas";
       const targetEmail = email || profile?.email;
       if (isTrial && targetEmail) {
-        const trialEndFormatted = trialEnd ? new Date(trialEnd).toLocaleDateString('pt-BR') : '';
-        const amountStr = (planConfig.amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        await sendTrialStartedEmail(targetEmail, userName || profile?.nome_completo || 'Profissional', planConfig.name, trialEndFormatted, amountStr);
+        await sendTrialStartedConfirmationEmailSafe({
+          supabase,
+          userId,
+          email: targetEmail,
+          userName: userName || profile?.nome_completo,
+          planKey,
+          stripeSubscriptionId: subscription.id,
+          trialStart,
+          trialEnd,
+          nextBillingDate,
+        });
       }
 
       console.log(`[Stripe Backend Log] [sucesso_final] Assinatura finalizada com sucesso.`);
