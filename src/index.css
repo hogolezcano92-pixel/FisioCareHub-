@@ -7381,3 +7381,121 @@ html:not(.dark) .clinical-tests-hub .clinical-test-subtitle-pill {
   }
 }
 
+/* =========================================================
+   ASSINATURA — contraste consistente entre claro e escuro
+   Escopo isolado para não alterar as demais áreas do app.
+   ========================================================= */
+:root[data-theme] .subscription-page {
+  background-color: var(--theme-bg) !important;
+}
+
+:root[data-theme] .subscription-theme {
+  color: var(--theme-text);
+}
+
+:root[data-theme] .subscription-theme.subscription-card,
+:root[data-theme] .subscription-theme .subscription-card,
+:root[data-theme] .subscription-theme.bg-white,
+:root[data-theme] .subscription-theme .bg-white {
+  background-color: var(--theme-card) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme] .subscription-theme .subscription-subtle,
+:root[data-theme] .subscription-theme .bg-slate-50,
+:root[data-theme] .subscription-theme .bg-slate-50\/30,
+:root[data-theme] .subscription-theme .bg-slate-50\/60,
+:root[data-theme] .subscription-theme .bg-slate-100 {
+  background: var(--theme-card-hover) !important;
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme] .subscription-theme .hover\:bg-slate-200:hover {
+  background-color: var(--theme-card-hover) !important;
+}
+
+:root[data-theme] .subscription-theme .border-slate-100,
+:root[data-theme] .subscription-theme .border-slate-200,
+:root[data-theme] .subscription-theme .border-slate-200\/60,
+:root[data-theme] .subscription-theme .border-slate-200\/80 {
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme] .subscription-theme :is(.text-slate-900, .text-slate-800, .text-slate-700),
+:root[data-theme] .subscription-theme :is(h1, h2, h3, h4) {
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme] .subscription-theme :is(.text-slate-400, .text-slate-500, .text-slate-600) {
+  color: var(--theme-text-muted) !important;
+}
+
+:root[data-theme] .subscription-theme input {
+  background-color: var(--theme-card-hover) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme] .subscription-theme input::placeholder {
+  color: var(--theme-text-muted) !important;
+  opacity: 0.82;
+}
+
+:root[data-theme] .subscription-on-color,
+:root[data-theme] .subscription-on-color :is(h1, h2, h3, h4, p, span, strong, svg) {
+  color: #ffffff !important;
+}
+
+:root[data-theme] .subscription-primary-dark {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme] .subscription-primary-dark:hover {
+  background-color: #1e293b !important;
+}
+
+:root[data-theme] .subscription-promo-banner {
+  background-color: #0f172a !important;
+}
+
+:root[data-theme] .subscription-promo-banner h3 {
+  color: #ffffff !important;
+}
+
+:root[data-theme] .subscription-promo-banner p {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .subscription-theme :is(.text-sky-700, .text-sky-800) {
+  color: #7dd3fc !important;
+}
+
+:root[data-theme="dark"] .subscription-theme :is(.text-emerald-700, .text-emerald-800) {
+  color: #6ee7b7 !important;
+}
+
+:root[data-theme="dark"] .subscription-theme .text-rose-700 {
+  color: #fda4af !important;
+}
+
+:root[data-theme="dark"] .subscription-theme :is(.text-amber-800, .text-amber-900) {
+  color: #fcd34d !important;
+}
+
+:root[data-theme="dark"] .subscription-theme :is(.bg-sky-50, .bg-sky-100) {
+  background-color: rgba(14, 165, 233, 0.14) !important;
+}
+
+:root[data-theme="dark"] .subscription-theme :is(.bg-emerald-50, .bg-emerald-100, .bg-emerald-100\/80) {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+:root[data-theme="dark"] .subscription-theme .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+:root[data-theme="dark"] .subscription-theme .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
