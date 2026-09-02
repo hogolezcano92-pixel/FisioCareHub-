@@ -166,7 +166,7 @@ export default function ProfileCompletionPrompt() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur-md sm:items-center"
+          className="profile-completion-overlay fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur-md sm:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -175,7 +175,7 @@ export default function ProfileCompletionPrompt() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="profile-completion-title"
-            className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-white text-slate-950 shadow-2xl dark:bg-[#0b1224] dark:text-white"
+            className="profile-completion-modal relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-white text-slate-950 shadow-2xl dark:bg-[#0b1224] dark:text-white"
             initial={{ y: 36, scale: 0.96, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
             exit={{ y: 24, scale: 0.98, opacity: 0 }}
@@ -189,7 +189,7 @@ export default function ProfileCompletionPrompt() {
             <button
               type="button"
               onClick={handleDismissSession}
-              className="absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white"
+              className="profile-completion-close absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white"
               aria-label="Fechar aviso"
             >
               <X size={18} />
@@ -206,39 +206,39 @@ export default function ProfileCompletionPrompt() {
                   {importantMissing.length > 0 ? <AlertCircle size={28} /> : <UserCog size={28} />}
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
+                  <p className="profile-completion-kicker mb-1 text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
                     FisioCareHub
                   </p>
-                  <h2 id="profile-completion-title" className="text-2xl font-black leading-tight text-slate-950 dark:text-white">
+                  <h2 id="profile-completion-title" className="profile-completion-title text-2xl font-black leading-tight text-slate-950 dark:text-white">
                     {title}
                   </h2>
                 </div>
               </div>
 
-              <p className="text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+              <p className="profile-completion-description text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
                 {description}
               </p>
 
-              <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="profile-completion-pending-card mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  <span className="profile-completion-pending-title text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Pendências encontradas
                   </span>
-                  <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white dark:bg-white dark:text-slate-950">
+                  <span className="profile-completion-pending-count rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white dark:bg-white dark:text-slate-950">
                     {missingFields.length}
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   {previewFields.map((field) => (
-                    <div key={field.key} className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                    <div key={field.key} className="profile-completion-pending-item flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
                       <CheckCircle2 size={16} className="text-blue-500" />
                       <span>Adicionar {field.label}</span>
                     </div>
                   ))}
 
                   {extraCount > 0 && (
-                    <p className="pl-6 text-xs font-bold text-slate-500 dark:text-slate-400">
+                    <p className="profile-completion-extra pl-6 text-xs font-bold text-slate-500 dark:text-slate-400">
                       + {extraCount} item{extraCount > 1 ? 's' : ''} para revisar em Minha Conta
                     </p>
                   )}
@@ -249,7 +249,7 @@ export default function ProfileCompletionPrompt() {
                 <button
                   type="button"
                   onClick={handleGoToProfile}
-                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99]"
+                  className="profile-completion-primary-button group flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99]"
                 >
                   Atualizar agora
                   <ChevronRight size={18} className="transition group-hover:translate-x-0.5" />
@@ -258,14 +258,14 @@ export default function ProfileCompletionPrompt() {
                 <button
                   type="button"
                   onClick={handleSnooze}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/[0.06] sm:w-auto"
+                  className="profile-completion-secondary-button flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/[0.06] sm:w-auto"
                 >
                   <Clock3 size={17} />
                   Lembrar depois
                 </button>
               </div>
 
-              <p className="mt-4 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
+              <p className="profile-completion-footnote mt-4 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
                 Esse aviso aparece apenas quando existem dados importantes incompletos.
               </p>
             </div>
