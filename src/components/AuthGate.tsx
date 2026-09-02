@@ -161,6 +161,39 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     );
   }
 
+  const accountStatus = String(profile?.status_aprovacao || '').trim().toLowerCase();
+  const isAccountBlocked = ['suspenso', 'bloqueado', 'excluido'].includes(accountStatus);
+
+  if (user && profile && isAccountBlocked) {
+    const title = accountStatus === 'bloqueado'
+      ? 'Conta bloqueada'
+      : accountStatus === 'excluido'
+        ? 'Conta indisponível'
+        : 'Conta suspensa';
+
+    return (
+      <div className="fixed inset-0 z-[95] bg-background flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-rose-500/15 bg-white dark:bg-slate-900 p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 text-2xl font-black">
+            !
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">{title}</h2>
+          <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400 mb-6">
+            Seu acesso ao FisioCareHub está temporariamente indisponível por uma ação administrativa.
+            Entre em contato com o suporte caso precise de esclarecimentos.
+          </p>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="w-full rounded-2xl bg-slate-900 dark:bg-white px-5 py-3 font-black text-white dark:text-slate-900 hover:opacity-90 transition-opacity"
+          >
+            Sair da conta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (postLoginSplash) {
     return (
       <PostLoginSplash
