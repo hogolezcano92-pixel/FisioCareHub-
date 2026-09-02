@@ -20,9 +20,9 @@ const isAsaasSandboxUrl = (value: string) => /(^|\.)api-sandbox\.asaas\.com/i.te
 const normalizePixPayload = (value: unknown) => {
   if (typeof value !== 'string') return '';
 
-  // O BR Code do Pix não contém espaços. Remove quebras de linha e caracteres
-  // invisíveis que podem invalidar o CRC ao copiar o código no navegador.
-  return value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '').trim();
+  // Preserve espaços internos: nome do recebedor e cidade fazem parte do BR Code
+  // e do cálculo CRC. Remova somente caracteres invisíveis que não pertencem ao payload.
+  return value.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').trim();
 };
 
 const hasPixPayloadShape = (value: string) => (
