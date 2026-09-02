@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
-const ASAAS_BASE_URL = "https://www.asaas.com/api/v3";
+const ASAAS_BASE_URL = (process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3")
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/^https:\/\/www\.asaas\.com\/api\/v3$/i, "https://api.asaas.com/v3");
 
 const headers = {
   'Content-Type': 'application/json',
