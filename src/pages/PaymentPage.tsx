@@ -29,7 +29,7 @@ const onlyDigits = (value?: string) => (value || '').replace(/\D/g, '');
 
 const normalizePixPayload = (value: unknown) => (
   typeof value === 'string'
-    ? value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '').trim()
+    ? value.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').trim()
     : ''
 );
 
