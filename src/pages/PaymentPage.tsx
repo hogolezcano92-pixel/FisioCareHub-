@@ -27,6 +27,12 @@ const formatAppointmentTime = (rawTime?: string) => formatTimeBR(rawTime, 'Horá
 
 const onlyDigits = (value?: string) => (value || '').replace(/\D/g, '');
 
+const normalizePixPayload = (value: unknown) => (
+  typeof value === 'string'
+    ? value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '').trim()
+    : ''
+);
+
 const normalizeAsaasError = (data: any) => {
   const firstError = Array.isArray(data?.errors) ? data.errors[0]?.description : undefined;
   const firstDetail = Array.isArray(data?.details?.errors) ? data.details.errors[0]?.description : undefined;
@@ -193,7 +199,7 @@ export default function PaymentPage() {
         }
 
         const redirectUrl = data.invoiceUrl || data.bankSlipUrl || data.url || data.paymentUrl;
-        const pixPayload = data.pixCopyPaste || data.pixPayload || data.payload;
+        const pixPayload = normalizePixPayload(data.pixCopyPaste || data.pixPayload || data.payload);
         const pixImage = data.pixEncodedImage || data.encodedImage || data.pixQrCode;
 
         if (asaasMethod === 'PIX' && (pixPayload || pixImage)) {
@@ -468,7 +474,9 @@ export default function PaymentPage() {
                       type="button"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(asaasPixPayment.pixCopyPaste);
+                          const pixPayload = normalizePixPayload(asaasPixPayment.pixCopyPaste);
+                          if (!pixPayload) throw new Error('Código PIX vazio');
+                          await navigator.clipboard.writeText(pixPayload);
                           toast.success('Código PIX copiado');
                         } catch {
                           toast.error('Não foi possível copiar automaticamente. Selecione e copie o código.');
