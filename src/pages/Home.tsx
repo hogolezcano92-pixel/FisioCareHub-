@@ -1231,7 +1231,7 @@ export default function Home() {
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-950"
+            className="absolute inset-0 hidden bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-950 lg:block"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent lg:block hidden" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
