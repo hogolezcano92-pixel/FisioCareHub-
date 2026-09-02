@@ -1107,12 +1107,144 @@ export default function Home() {
           stroke: #2563EB !important;
           opacity: 1 !important;
         }
+
+        /* Hero desktop: composição compacta, sem a antiga coluna retangular. */
+        @media (min-width: 1024px) {
+          .fisio-home .home-hero-section {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1.12fr) minmax(23.75rem, 0.88fr) !important;
+            align-items: center !important;
+            gap: clamp(3rem, 5vw, 6rem) !important;
+            width: min(100%, 90rem) !important;
+            min-height: clamp(42.5rem, 74svh, 51.25rem) !important;
+            margin-inline: auto !important;
+            padding: clamp(3.5rem, 5vw, 5rem) clamp(2rem, 5vw, 5rem) !important;
+            overflow: visible !important;
+          }
+
+          .fisio-home .home-hero-copy {
+            min-width: 0 !important;
+            padding: 0 !important;
+          }
+
+          .fisio-home .home-hero-content {
+            width: 100% !important;
+            max-width: 45rem !important;
+            margin-inline: 0 !important;
+          }
+
+          .fisio-home .home-hero-content > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 2rem !important;
+          }
+
+          .fisio-home .home-hero-title {
+            font-size: clamp(5rem, 7vw, 7.25rem) !important;
+            line-height: 0.9 !important;
+          }
+
+          .fisio-home .home-hero-subtitle {
+            max-width: 42rem !important;
+            font-size: clamp(1.05rem, 1.45vw, 1.35rem) !important;
+          }
+
+          .fisio-home .home-hero-visual {
+            width: 100% !important;
+            height: clamp(32.5rem, 54vw, 40rem) !important;
+            min-height: 0 !important;
+            isolation: isolate;
+          }
+
+          .fisio-home .home-hero-visual-bg {
+            background:
+              radial-gradient(circle at 72% 17%, rgba(59, 130, 246, 0.2), transparent 28%),
+              radial-gradient(circle at 24% 76%, rgba(124, 58, 237, 0.2), transparent 33%),
+              radial-gradient(circle at 60% 58%, rgba(14, 165, 233, 0.1), transparent 38%) !important;
+          }
+
+          .fisio-home .home-system-status-card {
+            top: clamp(1rem, 4vw, 3rem) !important;
+            right: clamp(0rem, 2vw, 2rem) !important;
+            width: min(72%, 18rem) !important;
+            padding: 1.75rem !important;
+            border-radius: 2.5rem !important;
+          }
+
+          .fisio-home .home-vip-card {
+            right: auto !important;
+            bottom: clamp(1rem, 4vw, 3rem) !important;
+            left: clamp(0rem, 2vw, 2rem) !important;
+            width: min(100%, 28rem) !important;
+            padding: clamp(2rem, 3vw, 2.75rem) !important;
+            border-radius: 3rem !important;
+          }
+
+          .fisio-home .home-vip-card > div {
+            gap: 1.5rem !important;
+            margin-bottom: 1.75rem !important;
+          }
+
+          .fisio-home .home-vip-card > p {
+            font-size: 1.05rem !important;
+          }
+        }
+
+        @media (min-width: 1024px) and (max-width: 1180px) {
+          .fisio-home .home-hero-section {
+            grid-template-columns: minmax(0, 1fr) minmax(22rem, 0.78fr) !important;
+            gap: 2.5rem !important;
+            padding-inline: 2.5rem !important;
+          }
+
+          .fisio-home .home-hero-title {
+            font-size: clamp(4.5rem, 7.2vw, 5.4rem) !important;
+          }
+
+          .fisio-home .home-vip-card {
+            width: min(100%, 25rem) !important;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          html:not(.dark) body:not(.dark) .fisio-home .home-hero-visual-bg,
+          :root[data-theme="light"] .fisio-home .home-hero-visual-bg,
+          html.light .fisio-home .home-hero-visual-bg,
+          body.light .fisio-home .home-hero-visual-bg {
+            background:
+              radial-gradient(circle at 72% 17%, rgba(37, 99, 235, 0.14), transparent 28%),
+              radial-gradient(circle at 24% 76%, rgba(124, 58, 237, 0.13), transparent 33%),
+              radial-gradient(circle at 60% 58%, rgba(14, 165, 233, 0.09), transparent 38%) !important;
+          }
+
+          html:not(.dark) body:not(.dark) .fisio-home .home-system-status-card,
+          :root[data-theme="light"] .fisio-home .home-system-status-card,
+          html.light .fisio-home .home-system-status-card,
+          body.light .fisio-home .home-system-status-card {
+            background: rgba(255, 255, 255, 0.94) !important;
+            border-color: rgba(196, 181, 253, 0.85) !important;
+            box-shadow: 0 28px 70px -36px rgba(37, 99, 235, 0.48) !important;
+          }
+
+          html:not(.dark) body:not(.dark) .fisio-home .home-system-status-card :is(p, span, div),
+          :root[data-theme="light"] .fisio-home .home-system-status-card :is(p, span, div),
+          html.light .fisio-home .home-system-status-card :is(p, span, div),
+          body.light .fisio-home .home-system-status-card :is(p, span, div) {
+            color: #0f172a !important;
+            text-shadow: none !important;
+          }
+
+          html:not(.dark) body:not(.dark) .fisio-home .home-system-status-card .text-blue-400,
+          :root[data-theme="light"] .fisio-home .home-system-status-card .text-blue-400,
+          html.light .fisio-home .home-system-status-card .text-blue-400,
+          body.light .fisio-home .home-system-status-card .text-blue-400 {
+            color: #2563eb !important;
+          }
+        }
       `}</style>
       {/* Hero Section - Home Care Focus */}
-      <section className="relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
-        <div className="flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
+      <section className="home-hero-section relative min-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
+        <div className="home-hero-copy flex-1 p-6 sm:p-10 lg:p-24 flex flex-col justify-center relative z-10">
           <div 
-            className="space-y-12 max-w-5xl mx-auto lg:mx-0 text-center lg:text-left"
+            className="home-hero-content space-y-12 max-w-5xl mx-auto lg:mx-0 text-center lg:text-left"
           >
             <motion.div 
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -1226,16 +1358,13 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex-1 relative min-h-[50vh] lg:min-h-full home-image-showcase">
+        <div className="home-hero-visual flex-1 relative min-h-[50vh] lg:min-h-full home-image-showcase">
           <motion.div 
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 hidden bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-950 lg:block"
+            className="home-hero-visual-bg absolute inset-0 hidden bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-950 lg:block"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent lg:block hidden" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
-            
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                <motion.div
                  animate={{ 
@@ -1258,7 +1387,7 @@ export default function Home() {
             <motion.div
               animate={{ y: [0, -20, 0] }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-20 right-10 hidden xl:block p-8 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] shadow-2xl z-20 w-72"
+              className="home-system-status-card absolute top-20 right-10 hidden lg:block p-8 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] shadow-2xl z-20 w-72"
             >
               <div className="flex items-center gap-5 mb-6">
                 <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
