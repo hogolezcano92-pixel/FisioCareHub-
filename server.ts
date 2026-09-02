@@ -344,6 +344,27 @@ async function getOrCreateStripePrice(planKey: string): Promise<string> {
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
 const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3";
 
+const normalizeAsaasBaseUrl = (value?: string) => {
+  const baseUrl = (value || "https://api.asaas.com/v3").trim().replace(/\/+$/, "");
+  return /^https:\/\/www\.asaas\.com\/api\/v3$/i.test(baseUrl)
+    ? "https://api.asaas.com/v3"
+    : baseUrl;
+};
+
+const isAsaasSandboxUrl = (value: string) => /(^|\.)api-sandbox\.asaas\.com/i.test(value);
+
+const normalizePixPayload = (value: unknown) => (
+  typeof value === "string"
+    ? value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, "").trim()
+    : ""
+);
+
+const hasPixPayloadShape = (value: string) => (
+  value.startsWith("000201")
+  && value.toLowerCase().includes("br.gov.bcb.pix")
+  && /6304[0-9A-F]{4}$/i.test(value)
+);
+
 const getAsaasHeaders = () => ({
   'Content-Type': 'application/json',
   'access_token': getEnv("ASAAS_API_KEY", "")
@@ -369,7 +390,7 @@ async function getOrCreateAsaasCustomer(userId: string, email: string, name: str
 
     if (profile?.asaas_customer_id) return profile.asaas_customer_id;
 
-    const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
+    const baseUrl = normalizeAsaasBaseUrl(getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3"));
 
     // 2. Search in Asaas by email
     console.log(`[Asaas] Searching customer by email: ${email}`);
@@ -2246,11 +2267,17 @@ async function startServer() {
 
       console.log("Asaas Appointment Payment Payload:", JSON.stringify(paymentData, null, 2));
 
-      const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
+      const baseUrl = normalizeAsaasBaseUrl(getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3"));
       const asaasApiKey = getEnv("ASAAS_API_KEY", "");
 
       if (!asaasApiKey) {
         throw new Error("ASAAS_API_KEY não configurada no servidor.");
+      }
+
+      if (process.env.VERCEL_ENV === "production" && isAsaasSandboxUrl(baseUrl)) {
+        return res.status(500).json({
+          error: "O Asaas está configurado em sandbox no ambiente de produção. Altere ASAAS_BASE_URL para https://api.asaas.com/v3 e use uma chave de produção."
+        });
       }
 
       const response = await axios.post(
@@ -2271,6 +2298,32 @@ async function startServer() {
       }
 
       console.log(`[Asaas] Payment created successfully: ${payment.id}`);
+
+      let pixQrCode: any = null;
+      let pixCopyPaste = "";
+
+      if (finalBillingType === "PIX") {
+        const pixResponse = await axios.get(
+          `${baseUrl}/payments/${payment.id}/pixQrCode`,
+          {
+            headers: {
+              'access_token': asaasApiKey,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        pixQrCode = pixResponse.data;
+        pixCopyPaste = normalizePixPayload(pixQrCode?.payload);
+
+        if (!pixCopyPaste || !hasPixPayloadShape(pixCopyPaste)) {
+          return res.status(502).json({
+            error: "O Asaas criou a cobrança, mas não retornou um Pix Copia e Cola válido.",
+            paymentId: payment.id,
+            invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || null
+          });
+        }
+      }
       
       // Record pending payment in Supabase
       await getSupabaseAdmin().from('pagamentos').upsert({
@@ -2288,8 +2341,9 @@ async function startServer() {
         id: payment.id,
         invoiceUrl: payment.invoiceUrl,
         bankSlipUrl: payment.bankSlipUrl,
-        pixQrCode: payment.pixQrCode,
-        pixCopyPaste: payment.pixCopyPaste,
+        pixEncodedImage: pixQrCode?.encodedImage || null,
+        pixCopyPaste: pixCopyPaste || null,
+        pixExpirationDate: pixQrCode?.expirationDate || null,
         url: payment.invoiceUrl || payment.bankSlipUrl // Keep url for compatibility
       });
 
@@ -2392,7 +2446,7 @@ async function startServer() {
       // Exact log requested by user
       console.log("Biblioteca pagamento payload:", paymentData);
 
-      const baseUrl = getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3").trim().replace(/\/$/, "");
+      const baseUrl = normalizeAsaasBaseUrl(getEnv("ASAAS_BASE_URL", "https://api.asaas.com/v3"));
       const asaasRes = await axios.post(`${baseUrl}/payments`, paymentData, {
         headers: getAsaasHeaders()
       });
