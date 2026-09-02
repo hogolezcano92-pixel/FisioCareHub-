@@ -5,6 +5,20 @@ const normalizePlanValue = (value?: unknown): string => {
   return value.trim().toLowerCase();
 };
 
+
+const getAdminPlanOverride = (profile?: any | null): UserPlan | null => {
+  const rawPlan = normalizePlanValue(profile?.admin_plan_override);
+  if (!['free', 'basic', 'pro'].includes(rawPlan)) return null;
+
+  const rawUntil = profile?.admin_plan_override_until;
+  if (rawUntil) {
+    const until = new Date(rawUntil).getTime();
+    if (Number.isNaN(until) || until <= Date.now()) return null;
+  }
+
+  return rawPlan as UserPlan;
+};
+
 const getAuthoritativeSubscription = (subscription?: any | null, profile?: any | null): any | null => {
   if (!subscription) return null;
 
@@ -64,6 +78,11 @@ const getSubscriptionPlan = (subscription?: any | null, profile?: any | null): U
 
 export const getEffectivePlan = (profile?: any | null, subscription?: any | null): UserPlan => {
   if (profile?.tipo_usuario === 'admin') return 'admin';
+
+  // O Admin pode conceder/restringir acesso sem tocar no contrato externo.
+  // Quando o override expira ou é removido, a regra normal de assinatura volta a valer.
+  const adminOverride = getAdminPlanOverride(profile);
+  if (adminOverride) return adminOverride;
 
   const currentSubscription = getAuthoritativeSubscription(subscription, profile);
   const subStatus = normalizePlanValue(currentSubscription?.status);
