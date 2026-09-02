@@ -519,6 +519,125 @@ export default function Subscription() {
         />
       )}
 
+      {/* Modal para Trocar Plano */}
+      {showPlanChangeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => {
+            if (!loading) setShowPlanChangeModal(false);
+          }}
+        >
+          <div
+            className="subscription-theme subscription-card bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-10 h-10 bg-sky-100 text-sky-700 rounded-xl flex items-center justify-center">
+                    <RefreshCw size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Trocar Plano</h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Escolha abaixo o novo plano da sua assinatura.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPlanChangeModal(false)}
+                disabled={loading}
+                aria-label="Fechar"
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50"
+              >
+                <XCircle size={22} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(Object.keys(PLANS) as PlanKey[]).map((pKey) => {
+                const plan = PLANS[pKey];
+                const isCurrentPlan = subDetails?.planKey === pKey;
+
+                return (
+                  <div
+                    key={pKey}
+                    className={cn(
+                      "rounded-2xl border p-4 transition-all",
+                      isCurrentPlan
+                        ? "bg-emerald-50/70 border-emerald-200"
+                        : "bg-slate-50 border-slate-200 hover:border-sky-300"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                          {plan.stripePlan}
+                        </span>
+                        <h4 className="text-base font-black text-slate-900">{plan.name}</h4>
+                      </div>
+                      {isCurrentPlan && (
+                        <span className="shrink-0 text-[10px] font-black uppercase px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Atual
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="text-xl font-black text-slate-900">{plan.formattedAmount}</div>
+                      {plan.equivalentMonthlyPrice && (
+                        <span className="text-xs font-bold text-sky-700">{plan.equivalentMonthlyPrice}</span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed mb-4">
+                      {plan.description}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleChangePlan(pKey)}
+                      disabled={isCurrentPlan || loading}
+                      className={cn(
+                        "w-full py-2.5 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5",
+                        isCurrentPlan
+                          ? "bg-emerald-100 text-emerald-800 cursor-default"
+                          : "subscription-on-color bg-sky-600 hover:bg-sky-700 text-white shadow-sm",
+                        loading && !isCurrentPlan && "opacity-70 cursor-wait"
+                      )}
+                    >
+                      {isCurrentPlan ? (
+                        <>
+                          <Check size={15} /> Plano Atual
+                        </>
+                      ) : loading ? (
+                        <>
+                          <Loader2 size={15} className="animate-spin" /> Alterando...
+                        </>
+                      ) : (
+                        <>
+                          Trocar para este plano <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-2xl bg-sky-50 border border-sky-100 p-4 flex items-start gap-2.5">
+              <ShieldCheck size={18} className="text-sky-700 shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                A troca utiliza sua assinatura existente. Após a confirmação do servidor, os dados do plano são atualizados e a tela é recarregada com o novo acesso.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Confirmação de Cancelamento */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
