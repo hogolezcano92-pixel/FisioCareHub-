@@ -487,6 +487,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Mantém decisões administrativas de acesso sincronizadas durante a sessão.
+  // Realtime entrega a mudança imediatamente; foco/visibilidade e um polling leve
+  // funcionam como fallback caso o Realtime esteja temporariamente indisponível.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let disposed = false;
+    let refreshing = false;
+
+    const refreshAdministrativeState = async () => {
+      if (disposed || refreshing) return;
+      refreshing = true;
+      try {
+        const { data, error } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data || disposed) return;
+
+        setProfile(data);
+        try {
+          localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+        } catch {}
+      } catch (error) {
+        console.warn('[Auth] Não foi possível atualizar silenciosamente o estado administrativo do perfil:', error);
+      } finally {
+        refreshing = false;
+      }
+    };
+
+    const channel = supabase
+      .channel(`profile-admin-watch:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'perfis', filter: `id=eq.${user.id}` },
+        (payload) => {
+          const nextProfile = payload.new as any;
+          if (!nextProfile || disposed) return;
+
+          setProfile(nextProfile);
+          try {
+            localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(nextProfile));
+          } catch {}
+        }
+      )
+      .subscribe();
+
+    const handleFocus = () => void refreshAdministrativeState();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void refreshAdministrativeState();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const intervalId = window.setInterval(() => void refreshAdministrativeState(), 60_000);
+
+    return () => {
+      disposed = true;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.clearInterval(intervalId);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   // Recuperação automática de acesso: se o Supabase local estiver marcado como
   // Free/cancelado, mas o perfil ainda tiver uma assinatura Stripe vinculada,
   // consulta o backend uma única vez. O endpoint compara com o Stripe e repara
