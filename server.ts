@@ -355,7 +355,7 @@ const isAsaasSandboxUrl = (value: string) => /(^|\.)api-sandbox\.asaas\.com/i.te
 
 const normalizePixPayload = (value: unknown) => (
   typeof value === "string"
-    ? value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, "").trim()
+    ? value.replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").trim()
     : ""
 );
 
