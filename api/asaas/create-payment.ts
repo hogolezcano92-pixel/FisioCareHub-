@@ -4,6 +4,33 @@ import { createClient } from '@supabase/supabase-js';
 
 const onlyDigits = (value?: string) => (value || '').replace(/\D/g, '');
 
+const normalizeAsaasBaseUrl = (value?: string) => {
+  const baseUrl = (value || 'https://api.asaas.com/v3').trim().replace(/\/+$/, '');
+
+  // Normaliza o endpoint legado para o host oficial atual da API.
+  if (/^https:\/\/www\.asaas\.com\/api\/v3$/i.test(baseUrl)) {
+    return 'https://api.asaas.com/v3';
+  }
+
+  return baseUrl;
+};
+
+const isAsaasSandboxUrl = (value: string) => /(^|\.)api-sandbox\.asaas\.com/i.test(value);
+
+const normalizePixPayload = (value: unknown) => {
+  if (typeof value !== 'string') return '';
+
+  // O BR Code do Pix não contém espaços. Remove quebras de linha e caracteres
+  // invisíveis que podem invalidar o CRC ao copiar o código no navegador.
+  return value.replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '').trim();
+};
+
+const hasPixPayloadShape = (value: string) => (
+  value.startsWith('000201')
+  && value.toLowerCase().includes('br.gov.bcb.pix')
+  && /6304[0-9A-F]{4}$/i.test(value)
+);
+
 const getAsaasErrorMessage = (err: any) => {
   const data = err?.response?.data;
   const firstError = Array.isArray(data?.errors) ? data.errors[0]?.description : undefined;
@@ -146,10 +173,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Informe um CPF/CNPJ válido para gerar cobrança no Asaas.' });
     }
 
-    const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-    const ASAAS_BASE_URL = (process.env.ASAAS_BASE_URL || 'https://api.asaas.com/v3').replace(/\/$/, '');
+    const ASAAS_API_KEY = process.env.ASAAS_API_KEY?.trim();
+    const ASAAS_BASE_URL = normalizeAsaasBaseUrl(process.env.ASAAS_BASE_URL);
 
     if (!ASAAS_API_KEY) return res.status(500).json({ error: 'ASAAS_API_KEY não configurada.' });
+
+    // Nunca entregue um Pix de teste a clientes no deploy de produção.
+    if (process.env.VERCEL_ENV === 'production' && isAsaasSandboxUrl(ASAAS_BASE_URL)) {
+      return res.status(500).json({
+        error: 'O Asaas está configurado em sandbox no ambiente de produção. Altere ASAAS_BASE_URL para https://api.asaas.com/v3 e use uma chave de produção.',
+      });
+    }
 
     const asaasHeaders = {
       access_token: ASAAS_API_KEY,
@@ -228,12 +262,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!payment?.id) throw new Error('Falha ao criar pagamento Asaas.');
 
     let pixQrCode: any = null;
+    let pixCopyPaste = '';
     if (billingType === 'PIX') {
       try {
         const pixResponse = await axios.get(`${ASAAS_BASE_URL}/payments/${payment.id}/pixQrCode`, { headers: asaasHeaders });
         pixQrCode = pixResponse.data;
+        pixCopyPaste = normalizePixPayload(pixQrCode?.payload);
+
+        if (!pixCopyPaste || !hasPixPayloadShape(pixCopyPaste)) {
+          throw new Error('O Asaas não retornou um Pix Copia e Cola válido para esta cobrança.');
+        }
       } catch (pixError: any) {
-        console.warn('[Asaas] Pagamento criado, mas QR Code PIX não foi retornado:', pixError.response?.data || pixError.message);
+        console.error('[Asaas] Pagamento criado, mas o QR Code PIX é inválido ou não foi retornado:', pixError.response?.data || pixError.message);
+        return res.status(pixError.response?.status || 502).json({
+          error: getAsaasErrorMessage(pixError),
+          paymentId: payment.id,
+          invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || null,
+        });
       }
     }
 
@@ -265,7 +310,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bankSlipUrl: payment.bankSlipUrl || null,
       paymentUrl: payment.invoiceUrl || payment.bankSlipUrl || null,
       pixEncodedImage: pixQrCode?.encodedImage || null,
-      pixCopyPaste: pixQrCode?.payload || null,
+      pixCopyPaste: pixCopyPaste || null,
       pixExpirationDate: pixQrCode?.expirationDate || null,
       externalReference: finalExternalReference,
       materialIds: isLibraryPayment ? normalizedMaterialIds : undefined,
