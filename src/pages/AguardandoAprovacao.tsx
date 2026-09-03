@@ -5,8 +5,9 @@ import {
   Clock,
   FileCheck2,
   HelpCircle,
+  Instagram,
   LogOut,
-  MessageCircle,
+  Mail,
   RefreshCcw,
   ShieldAlert,
   Sparkles,
@@ -30,11 +31,13 @@ export default function AguardandoAprovacao() {
   const isRejected = status === 'reprovado' || status === 'rejeitado';
   const rejectionReason = String((profile as any)?.motivo_reprovacao || '').trim();
 
+  const supportSubject = isRejected
+    ? 'Correção do cadastro profissional'
+    : 'Acompanhamento do cadastro profissional';
   const supportMessage = isRejected
     ? 'Olá, preciso de ajuda para corrigir meu cadastro profissional no FisioCareHub.'
     : 'Olá, gostaria de acompanhar a análise do meu cadastro profissional no FisioCareHub.';
-
-  const supportUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(supportMessage)}`;
+  const supportEmailUrl = `mailto:suporte@fisiocarehub.company?subject=${encodeURIComponent(supportSubject)}&body=${encodeURIComponent(supportMessage)}`;
 
   const steps = isRejected
     ? [
@@ -187,15 +190,25 @@ export default function AguardandoAprovacao() {
                 </button>
               )}
 
-              <a
-                href={supportUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-3 w-full py-5 bg-emerald-500 text-white rounded-2xl font-black shadow-xl shadow-emerald-200 hover:bg-emerald-600 active:scale-[0.98] transition-all"
-              >
-                <MessageCircle size={21} />
-                Falar com Suporte
-              </a>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href={supportEmailUrl}
+                  className="flex items-center justify-center gap-3 w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all"
+                >
+                  <Mail size={21} />
+                  Suporte por e-mail
+                </a>
+
+                <a
+                  href="https://instagram.com/fisiocarehub.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full py-5 bg-gradient-to-r from-pink-600 via-fuchsia-600 to-violet-600 text-white rounded-2xl font-black shadow-xl shadow-pink-200 hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                  <Instagram size={21} />
+                  Instagram
+                </a>
+              </div>
 
               <button
                 onClick={handleLogout}

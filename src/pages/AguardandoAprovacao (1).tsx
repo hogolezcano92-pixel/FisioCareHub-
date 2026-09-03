@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ShieldAlert, Clock, LogOut, MessageCircle } from 'lucide-react';
+import { ShieldAlert, Clock, Instagram, LogOut, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
@@ -62,16 +62,26 @@ export default function AguardandoAprovacao() {
               : 'Seu cadastro foi recebido com sucesso! Nossa equipe está validando seu CREFITO e documentos. Você receberá um e-mail assim que seu acesso for liberado.'}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a 
-              href="https://wa.me/5511999999999" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-900/20 hover:bg-blue-500 hover:scale-[1.02] active:scale-95 transition-all border border-white/10"
-            >
-              <MessageCircle size={22} />
-              Suporte WhatsApp
-            </a>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <a
+                href="mailto:suporte@fisiocarehub.company?subject=Suporte%20FisioCareHub"
+                className="flex items-center justify-center gap-3 py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-900/20 hover:bg-blue-500 hover:scale-[1.02] active:scale-95 transition-all border border-white/10"
+              >
+                <Mail size={22} />
+                Suporte por e-mail
+              </a>
+
+              <a
+                href="https://instagram.com/fisiocarehub.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 py-5 bg-gradient-to-r from-pink-600 via-fuchsia-600 to-violet-600 text-white rounded-2xl font-black shadow-xl shadow-pink-900/20 hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all border border-white/10"
+              >
+                <Instagram size={22} />
+                Instagram
+              </a>
+            </div>
 
             <button
               onClick={handleLogout}
