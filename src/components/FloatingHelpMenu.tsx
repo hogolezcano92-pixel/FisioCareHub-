@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   CreditCard,
   AlertCircle,
-  Crown
+  Crown,
+  Mail,
+  Instagram
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -586,17 +588,26 @@ export default function FloatingHelpMenu({ hideButton = false }: { hideButton?: 
                   </div>
                   
                   <div className="grid grid-cols-1 gap-3">
-                    <button
-                      onClick={() => {
-                        window.open("https://wa.me/5511984040563", "_blank");
-                      }}
-                      className="w-full flex items-center gap-4 p-4 bg-emerald-500 text-white rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                    <a
+                      href="mailto:suporte@fisiocarehub.company?subject=Suporte%20FisioCareHub"
+                      className="w-full flex items-center gap-4 p-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                     >
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                        <MessageCircle size={20} />
+                        <Mail size={20} />
                       </div>
-                      <span>Falar no WhatsApp</span>
-                    </button>
+                      <span>Enviar e-mail ao suporte</span>
+                    </a>
+                    <a
+                      href="https://instagram.com/fisiocarehub.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-pink-600 via-fuchsia-600 to-violet-600 text-white rounded-2xl font-black hover:brightness-110 transition-all shadow-lg shadow-pink-600/20"
+                    >
+                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                        <Instagram size={20} />
+                      </div>
+                      <span>Falar pelo Instagram</span>
+                    </a>
                     <button
                       onClick={() => {
                         setShowHelpCenter(false);
