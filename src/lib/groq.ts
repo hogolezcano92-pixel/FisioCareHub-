@@ -220,7 +220,6 @@ Você é o Especialista de Triagem do FisioCareHub. Sua função é processar da
       model: MODEL,
       response_format: { type: "json_object" }
     });
-
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Resposta da IA inválida");
     return JSON.parse(content.replace(/```json\n?|```/g, '').trim());
@@ -228,5 +227,36 @@ Você é o Especialista de Triagem do FisioCareHub. Sua função é processar da
     console.error("Erro na geração de triagem (Groq):", error);
     if (error.status === 401) throw new Error("Chave de API do Groq inválida ou expirada. Verifique as configurações.");
     throw new Error(error.message || "Não foi possível realizar a triagem no momento.");
+  }
+}
+
+export async function categorizeContent(title: string, description: string) {
+  const client = getGroqClient();
+  if (!client) return "Reabilitação";
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: `Você é um especialista em fisioterapia e saúde. Sua tarefa é categorizar um conteúdo educativo para uma biblioteca de saúde.
+
+Categorias Disponíveis:
+- Dor Lombar
+- Lesões Esportivas
+- Postura
+- Mobilidade
+- Recuperação Pós-Cirúrgica
+- Reabilitação
+
+Retorne APENAS o nome da categoria que melhor se encaixa em texto puro. Se nenhuma se encaixar perfeitamente, retorne "Reabilitação".`
+        },
+        { role: "user", content: `Título: ${title}\nDescrição: ${description}` }
+      ],
+      model: MODEL,
+    });
+    return completion.choices[0]?.message?.content?.trim() || "Reabilitação";
+  } catch (error) {
+    console.error("Error categorizing content (Groq):", error);
+    return "Reabilitação";
   }
 }
