@@ -32,18 +32,11 @@ export async function analyzeSymptoms(symptoms: string) {
   try {
     const completion = await client.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: "Você é um assistente de triagem de fisioterapia inteligente. Forneça uma análise estruturada em Markdown com: 1. Possíveis áreas afetadas. 2. Nível de urgência (Baixo, Médio, Alto). 3. Recomendações iniciais (ex: gelo, repouso, procurar especialista). 4. Perguntas adicionais que o fisioterapeuta pode fazer. Lembre-se: Isso não substitui uma consulta profissional."
-        },
-        {
-          role: "user",
-          content: `Analise os seguintes sintomas relatados pelo paciente: "${symptoms}".`
-        }
+        { role: "system", content: "Você é um assistente de triagem de fisioterapia inteligente. Forneça uma análise estruturada em Markdown com: 1. Possíveis áreas afetadas. 2. Nível de urgência (Baixo, Médio, Alto). 3. Recomendações iniciais. 4. Perguntas adicionais. Isso não substitui consulta profissional." },
+        { role: "user", content: `Analise os seguintes sintomas relatados pelo paciente: "${symptoms}".` }
       ],
       model: MODEL,
     });
-
     return completion.choices[0]?.message?.content || "Não foi possível realizar a triagem no momento.";
   } catch (error: any) {
     console.error("Erro na análise de IA (Groq):", error);
@@ -54,22 +47,14 @@ export async function analyzeSymptoms(symptoms: string) {
 export async function generateMedicalRecord(type: string, notes: string) {
   const client = getGroqClient();
   if (!client) throw new Error("Configuração de IA incompleta.");
-
   try {
     const completion = await client.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: "Você é um assistente especializado em documentação de fisioterapia. Gere um registro profissional baseado nas notas fornecidas, seguindo as melhores práticas da fisioterapia brasileira (CREFITO). Retorne o texto formatado em Markdown profissional."
-        },
-        {
-          role: "user",
-          content: `Tipo: ${type}, Notas: "${notes}".`
-        }
+        { role: "system", content: "Você é um assistente especializado em documentação de fisioterapia. Gere um registro profissional baseado nas notas fornecidas, seguindo as melhores práticas da fisioterapia brasileira (CREFITO). Retorne o texto formatado em Markdown profissional." },
+        { role: "user", content: `Tipo: ${type}, Notas: "${notes}".` }
       ],
       model: MODEL,
     });
-
     return completion.choices[0]?.message?.content || "Não foi possível gerar a documentação no momento.";
   } catch (error) {
     console.error("Erro na geração de prontuário (Groq):", error);
@@ -80,28 +65,14 @@ export async function generateMedicalRecord(type: string, notes: string) {
 export async function generateDocument(type: string, patientName: string, additionalInfo: string) {
   const client = getGroqClient();
   if (!client) throw new Error("Configuração de IA incompleta.");
-
   try {
     const completion = await client.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: `Você é um assistente administrativo para fisioterapeutas no Brasil. Gere documentos claros, formais e úteis para apoio administrativo.
-
-REGRAS IMPORTANTES:
-- Não invente CREFITO, CPF, endereço, valores, datas ou forma de pagamento.
-- Se algum dado obrigatório não foi informado, deixe indicado como "Não informado".
-- Use português brasileiro.
-- Retorne texto profissional em Markdown.`
-        },
-        {
-          role: "user",
-          content: `Tipo de documento: ${type}\nPaciente: ${patientName}\nInformações adicionais: ${additionalInfo}`
-        }
+        { role: "system", content: `Você é um assistente administrativo para fisioterapeutas no Brasil. Gere documentos claros, formais e úteis para apoio administrativo. Não invente CREFITO, CPF, endereço, valores, datas ou forma de pagamento. Se algum dado obrigatório não foi informado, deixe indicado como "Não informado". Use português brasileiro. Retorne texto profissional em Markdown.` },
+        { role: "user", content: `Tipo de documento: ${type}\nPaciente: ${patientName}\nInformações adicionais: ${additionalInfo}` }
       ],
       model: MODEL,
     });
-
     return completion.choices[0]?.message?.content || "Não foi possível gerar o documento no momento.";
   } catch (error) {
     console.error("Erro na geração de documento (Groq):", error);
@@ -134,10 +105,7 @@ Não invente dados clínicos ausentes. Quando uma informação não estiver no r
 
 Use português brasileiro e linguagem clínica profissional.`
         },
-        {
-          role: "user",
-          content: `Relato bruto do atendimento:\n${normalizedText}`
-        }
+        { role: "user", content: `Relato bruto do atendimento:\n${normalizedText}` }
       ],
       model: MODEL,
       temperature: 0.3,
@@ -146,12 +114,8 @@ Use português brasileiro e linguagem clínica profissional.`
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Resposta da IA inválida.");
-
     const parsed = JSON.parse(content);
-
-    if (!parsed || typeof parsed !== "object") {
-      throw new Error("A IA não retornou um objeto SOAP válido.");
-    }
+    if (!parsed || typeof parsed !== "object") throw new Error("A IA não retornou um objeto SOAP válido.");
 
     return {
       subjective: typeof parsed.subjective === "string" ? parsed.subjective.trim() : "Não informado no relato",
@@ -168,25 +132,101 @@ Use português brasileiro e linguagem clínica profissional.`
 export async function summarizePatientHistory(history: string) {
   const client = getGroqClient();
   if (!client) throw new Error("Configuração de IA incompleta.");
-
   try {
     const completion = await client.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: "Você é um assistente sênior de fisioterapia. Resuma o histórico de atendimentos do paciente em um parágrafo conciso, destacando a evolução clínica, principais queixas e progresso no tratamento. Use uma linguagem profissional e técnica."
-        },
-        {
-          role: "user",
-          content: `Histórico de Prontuários: "${history}"`
-        }
+        { role: "system", content: "Você é um assistente sênior de fisioterapia. Resuma o histórico de atendimentos do paciente em um parágrafo conciso, destacando a evolução clínica, principais queixas e progresso no tratamento. Use linguagem profissional e técnica." },
+        { role: "user", content: `Histórico de Prontuários: "${history}"` }
       ],
       model: MODEL,
     });
-
     return completion.choices[0]?.message?.content || "Não foi possível resumir o histórico no momento.";
   } catch (error) {
     console.error("Erro ao resumir histórico (Groq):", error);
     throw new Error("Não foi possível resumir o histórico no momento.");
+  }
+}
+
+export async function generateTriageReport(data: any) {
+  const client = getGroqClient();
+  if (!client) throw new Error("Configuração de IA incompleta: VITE_GROQ_API_KEY não encontrada. Por favor, configure a chave de API nas configurações do projeto.");
+
+  const prompt = `
+Você é o Especialista de Triagem do FisioCareHub. Sua função é processar dados de pacientes e gerar um relatório de Raciocínio Clínico Fisioterapêutico de alto nível.
+
+# DADOS DO PACIENTE
+- Idade: ${data.idade} | Sexo: ${data.sexo} | Profissão: ${data.profissao}
+- Região da Dor: ${data.regiao_dor}
+- Início: ${data.inicio_sintomas} | Tempo: ${data.tempo_sintomas}
+- Escala de Dor: ${data.escala_dor}/10
+- Limitação Funcional: ${data.avaliacao_funcional?.limitacao_atividades || 'Não informada'}
+- Perguntas Específicas da Região: ${JSON.stringify(data.perguntas_especificas || {})}
+- Red Flags: ${JSON.stringify(data.red_flags || {})}
+- Histórico: ${JSON.stringify(data.historico_clinico || {})}
+- Doenças: ${Array.isArray(data.doencas_preexistentes) ? data.doencas_preexistentes.join(', ') : 'Nenhuma'}
+
+# OBJETIVOS DA ANÁLISE
+1. CLASSIFICAÇÃO CLÍNICA: Musculoesquelético, Neurológico, Cardiorrespiratório, Pós-operatório ou Esportivo.
+2. SCORE DE GRAVIDADE: Verde (Leve), Amarelo (Moderado) ou Vermelho (Alto Risco/Red Flags).
+3. HIPÓTESES FUNCIONAIS: Liste no máximo 3 hipóteses baseadas na biomecânica e sintomas.
+4. TRIAGEM DE SEGURANÇA: Destaque Red Flags se houver.
+
+# FORMATO DE SAÍDA (JSON)
+{
+  "classificacao": "string",
+  "gravidade": "Verde | Amarelo | Vermelho",
+  "red_flag_detected": boolean,
+  "relatorio": "Markdown string"
+}
+
+# ESTRUTURA DO RELATÓRIO (Markdown)
+## 📑 Resumo da Triagem
+- **Região:** ${data.regiao_dor}
+- **Tempo:** ${data.tempo_sintomas}
+- **Dor:** ${data.escala_dor}/10
+- **Limitação:** ${data.avaliacao_funcional?.limitacao_atividades || 'Não informada'}
+
+### 🔍 Análise Clínica Inicial
+[Análise técnica unindo idade, ocupação e comportamento dos sintomas].
+
+### 💡 Hipóteses Funcionais
+1. [Hipótese 1]
+2. [Hipótese 2]
+3. [Hipótese 3]
+
+### 🚨 Triagem de Risco
+- **Classificação:** [Classificação Clínica]
+- **Gravidade:** [Score]
+- **Red Flags:** [Detalhes se houver]
+
+### 🩺 Sugestões de Avaliação
+- [Sugestão 1]
+- [Sugestão 2]
+
+### 🏠 Recomendações Iniciais
+- [Recomendação 1]
+- [Recomendação 2]
+
+---
+*Aviso: Suporte à decisão profissional. Imprescindível avaliação física.*
+`;
+
+  try {
+    const completion = await client.chat.completions.create({
+      messages: [
+        { role: "system", content: "Você é o Especialista de Triagem do FisioCareHub. Responda sempre em formato JSON válido, sem blocos de código Markdown." },
+        { role: "user", content: prompt }
+      ],
+      model: MODEL,
+      response_format: { type: "json_object" }
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("Resposta da IA inválida");
+    return JSON.parse(content.replace(/```json\n?|```/g, '').trim());
+  } catch (error: any) {
+    console.error("Erro na geração de triagem (Groq):", error);
+    if (error.status === 401) throw new Error("Chave de API do Groq inválida ou expirada. Verifique as configurações.");
+    throw new Error(error.message || "Não foi possível realizar a triagem no momento.");
   }
 }
