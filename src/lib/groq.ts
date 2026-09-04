@@ -121,7 +121,18 @@ export async function generateSOAPRecord(rawText: string) {
       messages: [
         {
           role: "system",
-          content: "Você é um fisioterapeuta especialista em documentação clínica. Converta o relato bruto no padrão SOAP. Não invente dados clínicos ausentes. Quando uma informação não estiver no relato, escreva 'Não informado'. Em S registre relato/queixa do paciente; em O, achados observáveis ou mensuráveis; em A, interpretação fisioterapêutica baseada apenas nos dados disponíveis; em P, condutas e próximos passos mencionados ou justificáveis pelo relato."
+          content: `Você é um fisioterapeuta especialista em documentação clínica. Converta o relato bruto no padrão SOAP.
+
+Retorne SOMENTE um objeto JSON válido, sem Markdown, sem texto antes ou depois, usando exatamente estas quatro chaves:
+{"subjective":"...","objective":"...","assessment":"...","plan":"..."}
+
+Não invente dados clínicos ausentes. Quando uma informação não estiver no relato, escreva "Não informado no relato".
+- subjective: queixa, sintomas, evolução e percepção do paciente.
+- objective: somente achados observáveis, testes ou medidas realmente informados.
+- assessment: interpretação fisioterapêutica baseada apenas nos dados disponíveis.
+- plan: condutas, orientações e próximos passos mencionados ou justificáveis pelo relato.
+
+Use português brasileiro e linguagem clínica profissional.`
         },
         {
           role: "user",
@@ -129,39 +140,28 @@ export async function generateSOAPRecord(rawText: string) {
         }
       ],
       model: MODEL,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "soap_record",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              subjective: { type: "string" },
-              objective: { type: "string" },
-              assessment: { type: "string" },
-              plan: { type: "string" }
-            },
-            required: ["subjective", "objective", "assessment", "plan"],
-            additionalProperties: false
-          }
-        }
-      }
+      temperature: 0.3,
+      response_format: { type: "json_object" }
     });
 
     const content = completion.choices[0]?.message?.content;
     if (!content) throw new Error("Resposta da IA inválida.");
 
     const parsed = JSON.parse(content);
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("A IA não retornou um objeto SOAP válido.");
+    }
+
     return {
-      subjective: String(parsed.subjective).trim(),
-      objective: String(parsed.objective).trim(),
-      assessment: String(parsed.assessment).trim(),
-      plan: String(parsed.plan).trim(),
+      subjective: typeof parsed.subjective === "string" ? parsed.subjective.trim() : "Não informado no relato",
+      objective: typeof parsed.objective === "string" ? parsed.objective.trim() : "Não informado no relato",
+      assessment: typeof parsed.assessment === "string" ? parsed.assessment.trim() : "Não informado no relato",
+      plan: typeof parsed.plan === "string" ? parsed.plan.trim() : "Não informado no relato",
     };
   } catch (error: any) {
     console.error("Erro na geração de SOAP (Groq):", error);
-    throw new Error(error.message || "Não foi possível estruturar o prontuário SOAP no momento.");
+    throw new Error(error?.message || "Não foi possível estruturar o prontuário SOAP no momento.");
   }
 }
 
@@ -185,7 +185,7 @@ export async function summarizePatientHistory(history: string) {
     });
 
     return completion.choices[0]?.message?.content || "Não foi possível resumir o histórico no momento.";
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao resumir histórico (Groq):", error);
     throw new Error("Não foi possível resumir o histórico no momento.");
   }
