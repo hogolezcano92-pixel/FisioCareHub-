@@ -121,16 +121,19 @@ export async function generateSOAPRecord(rawText: string) {
   const client = getGroqClient();
   if (!client) throw new Error("Configuração de IA incompleta.");
 
+  const normalizedText = rawText.trim();
+  if (!normalizedText) throw new Error("Relato do atendimento vazio.");
+
   try {
     const completion = await client.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "Você é um Arquiteto de Software e Consultor HealthTech Sênior especializado em Fisioterapia. Converta o relato bruto no padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano). Retorne um objeto JSON onde TODAS as chaves ('subjective', 'objective', 'assessment', 'plan') DEVEM ter valores do tipo STRING. Não use objetos ou arrays aninhados."
+          content: "Você é um fisioterapeuta especialista em documentação clínica. Converta o relato bruto no padrão SOAP. Responda SOMENTE com JSON válido, sem markdown. O JSON DEVE conter exatamente: subjective, objective, assessment, plan. Todas devem ser STRING. Não use arrays, objetos, null ou campos adicionais. Não invente dados clínicos; se algo não estiver informado, escreva 'Não informado'."
         },
         {
           role: "user",
-          content: `Relato Bruto: "${rawText}"`
+          content: `Relato bruto do atendimento:\n${normalizedText}`
         }
       ],
       model: MODEL,
@@ -138,21 +141,29 @@ export async function generateSOAPRecord(rawText: string) {
     });
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error("Resposta da IA inválida");
-    
-    try {
-      const cleanJson = content.replace(/```json\n?|```/g, '').trim();
-      return JSON.parse(cleanJson);
-    } catch (parseError) {
-      console.error("Erro ao parsear JSON SOAP:", content);
-      throw new Error("Formato de resposta inválido.");
-    }
+    if (!content) throw new Error("Resposta da IA inválida.");
+
+    const parsed = JSON.parse(content);
+    const requiredKeys = ['subjective', 'objective', 'assessment', 'plan'];
+    const valid = parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      requiredKeys.every((key) => typeof parsed[key] === 'string') &&
+      Object.keys(parsed).every((key) => requiredKeys.includes(key));
+
+    if (!valid) throw new Error("A IA retornou um SOAP fora do padrão esperado.");
+
+    return {
+      subjective: parsed.subjective.trim(),
+      objective: parsed.objective.trim(),
+      assessment: parsed.assessment.trim(),
+      plan: parsed.plan.trim(),
+    };
   } catch (error: any) {
     console.error("Erro na geração de SOAP (Groq):", error);
     throw new Error(error.message || "Não foi possível estruturar o prontuário SOAP no momento.");
   }
 }
-
 export async function summarizePatientHistory(history: string) {
   const client = getGroqClient();
   if (!client) throw new Error("Configuração de IA incompleta.");
