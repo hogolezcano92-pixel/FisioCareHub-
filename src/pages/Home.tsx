@@ -55,6 +55,7 @@ interface Professional {
   location: string;
   crefito?: string;
   services?: string[];
+  sessionPrice?: number | null;
 }
 
 const NOISE_SVG = "data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
@@ -224,6 +225,7 @@ export default function Home() {
         bio: profile.bio || 'Especialista dedicado à reabilitação domiciliar com foco no bem-estar do paciente.',
         location: profile.localizacao || profile.cidade || 'São Paulo',
         crefito: profile.crefito,
+        sessionPrice: profile.preco_sessao != null ? Number(profile.preco_sessao) : null,
         services: Array.isArray(profile.servicos_ofertados)
           ? profile.servicos_ofertados.filter(Boolean).slice(0, 4)
           : []
