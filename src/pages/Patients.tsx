@@ -51,18 +51,20 @@ export default function Patients() {
 
   const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
 
-  const resolvePatientPhoto = (patient: any, profileData?: any) => (
-    patient?.foto_url ||
-    patient?.avatar_url ||
-    profileData?.foto_url ||
-    profileData?.avatar_url ||
-    null
-  );
+  // Paciente externo/manual não deve herdar a foto do perfil do fisioterapeuta.
+  // Perfil só pode fornecer foto quando há vínculo explícito por perfil_id.
+  const resolvePatientPhoto = (patient: any, profileData?: any) => {
+    if (patient?.foto_url) return patient.foto_url;
+    if (patient?.perfil_id && profileData) {
+      return profileData?.foto_url || profileData?.avatar_url || null;
+    }
+    return null;
+  };
 
   const enrichPatientsWithProfiles = async (basePatients: any[]) => {
     const profileIds = Array.from(new Set(
       basePatients
-        .flatMap((patient: any) => [patient?.perfil_id, patient?.profile_id, patient?.user_id, patient?.auth_user_id, patient?.paciente_id])
+        .flatMap((patient: any) => [patient?.perfil_id])
         .filter(Boolean)
         .map(String)
     ));
@@ -111,7 +113,7 @@ export default function Patients() {
     }
 
     return basePatients.map((patient: any) => {
-      const candidateIds = [patient?.perfil_id, patient?.profile_id, patient?.user_id, patient?.auth_user_id, patient?.paciente_id]
+      const candidateIds = [patient?.perfil_id]
         .filter(Boolean)
         .map(String);
       const linkedProfile = candidateIds.map((candidateId) => profilesById.get(candidateId)).find(Boolean)
@@ -119,13 +121,13 @@ export default function Patients() {
 
       return {
         ...patient,
-        perfil_id: patient?.perfil_id || linkedProfile?.id || null,
+        perfil_id: patient?.perfil_id || null,
         nome_completo: patient?.nome_completo || linkedProfile?.nome_completo || 'Paciente',
         email: patient?.email || linkedProfile?.email || null,
         telefone: patient?.telefone || linkedProfile?.telefone || null,
         data_nascimento: patient?.data_nascimento || linkedProfile?.data_nascimento || null,
         foto_url: resolvePatientPhoto(patient, linkedProfile),
-        avatar_url: patient?.avatar_url || linkedProfile?.avatar_url || linkedProfile?.foto_url || null,
+        avatar_url: patient?.avatar_url || (patient?.perfil_id ? (linkedProfile?.avatar_url || linkedProfile?.foto_url || null) : null),
         linked_profile: linkedProfile || null,
       };
     });
