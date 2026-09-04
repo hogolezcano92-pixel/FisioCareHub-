@@ -183,11 +183,25 @@ export default function ProfessionalProfile() {
           if (prices.length > 0) minPrice = Math.min(...prices);
         }
 
+        // Fallback final: the Home/profile card stores the professional's session price in perfis.preco_sessao.
+        // Keep dynamic/legacy service pricing as the priority, but use preco_sessao when those sources have no valid price.
+        const profileSessionPrice = Number(data.preco_sessao);
+        if (
+          (!minPrice || minPrice <= 0) &&
+          Number.isFinite(profileSessionPrice) &&
+          profileSessionPrice > 0
+        ) {
+          minPrice = profileSessionPrice;
+        }
+
         // Hard fallback if still empty to ensure UI is not broken
         if (finalServices.length === 0) {
-          console.log('All service sources empty, using hard default');
-          finalServices = [{ id: 'default', name: 'Consulta / Avaliação', base_price: 0 }];
-          minPrice = 0;
+          console.log('All service sources empty, using profile/default price');
+          const fallbackPrice = Number.isFinite(profileSessionPrice) && profileSessionPrice > 0
+            ? profileSessionPrice
+            : 0;
+          finalServices = [{ id: 'default', name: 'Consulta / Avaliação', base_price: fallbackPrice }];
+          if (minPrice === null) minPrice = fallbackPrice;
         }
 
         setActiveServices(finalServices);
