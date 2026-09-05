@@ -85,6 +85,7 @@ import AdminDashboard from '../components/Admin/AdminDashboard';
 import AdminLogs from '../components/Admin/AdminLogs';
 import AdminSecurity from '../components/Admin/AdminSecurity';
 import AdminViva from '../components/Admin/AdminViva';
+import AdminMarketing from '../components/Admin/AdminMarketing';
 
 export default function Admin() {
   const { t } = useTranslation();
@@ -1462,6 +1463,7 @@ export default function Admin() {
     { id: 'tickets', label: 'Support Desk', icon: AlertTriangle },
     { id: 'chat', label: 'Suporte', icon: MessageSquare },
     { id: 'notifications', label: 'System Alerts', icon: Bell },
+    { id: 'marketing', label: 'Marketing', icon: Megaphone },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ] as const;
 
@@ -2830,7 +2832,7 @@ export default function Admin() {
             </div>
           )}
 
-          {!loading && !error && activeTab === 'notifications' && (
+          {activeTab === 'marketing' && <AdminMarketing />}\n\n          {!loading && !error && activeTab === 'notifications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Email/Template Test Tool */}
               <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
