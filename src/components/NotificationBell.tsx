@@ -98,7 +98,6 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-
   useEffect(() => {
     if (!user || !isOpen) return;
 
@@ -195,8 +194,29 @@ export default function NotificationBell() {
     }
   };
 
+  const getNotificationLink = (notification: any) => {
+    const candidates = [
+      notification?.link,
+      notification?.metadata?.link,
+      notification?.metadata?.url,
+      notification?.url,
+    ];
+
+    const rawLink = candidates.find((value) => typeof value === 'string' && value.trim());
+    if (!rawLink) return '';
+
+    const link = rawLink.trim();
+
+    // Compatibilidade com campanhas antigas que ainda carregam o domínio anterior.
+    if (/^https?:\/\/(www\.)?fisiocarehub\.com\.br/i.test(link)) {
+      return link.replace(/^https?:\/\/(www\.)?fisiocarehub\.com\.br/i, 'https://www.fisiocarehub.company');
+    }
+
+    return link;
+  };
+
   const openNotification = async (notification: any) => {
-    const link = typeof notification.link === 'string' ? notification.link.trim() : '';
+    const link = getNotificationLink(notification);
 
     // Não marca como lida automaticamente quando a notificação não tem link.
     // Assim mensagens/avisos internos não desaparecem da aba "Não lidas" por toque acidental.
@@ -270,7 +290,6 @@ export default function NotificationBell() {
       };
     }
 
-
     if (normalizedTipo.includes('video') || normalizedTipo.includes('telehealth') || normalizedTipo.includes('chamada')) {
       return {
         icon: <Activity size={18} />,
@@ -292,7 +311,7 @@ export default function NotificationBell() {
     if (normalizedTipo.includes('subscription') || normalizedTipo.includes('assinatura') || normalizedTipo.includes('plano')) {
       return {
         icon: <CreditCard size={18} />,
-        iconWrap: 'bg-purple-500/12 text-purple-300 ring-1 ring-purple-300/25',
+        iconWrap: 'bg-purple-500/12 text-purple-300 ring-1 ring-violet-300/25',
         label: 'Assinatura',
         accent: 'from-purple-500/18 via-violet-500/8 to-transparent',
       };
@@ -409,7 +428,6 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-
       <style>{`
         .fch-notification-popover {
           background: rgba(2, 6, 23, 0.96) !important;
@@ -660,6 +678,7 @@ export default function NotificationBell() {
                   {visibleNotifications.map((n) => {
                     const tone = getNotificationTone(n.tipo);
                     const isUnread = !n.lida;
+                    const notificationLink = getNotificationLink(n);
 
                     return (
                       <div
@@ -726,7 +745,7 @@ export default function NotificationBell() {
                             )}
 
                             <div className="flex items-center justify-between gap-2 pt-1">
-                              {n.link ? (
+                              {notificationLink ? (
                                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-300 group-hover:text-blue-200">
                                   Ver detalhes
                                 </span>
