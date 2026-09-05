@@ -120,17 +120,17 @@ export default function NotificationBell() {
 
   const getNotificationTone = (tipo?: string): NotificationTone => {
     const t = String(tipo || '').toLowerCase();
-    if (t.includes('marketing') || t.includes('campaign')) return { icon: <Sparkles size={18} />, iconWrap: 'bg-violet-500/12 text-violet-300 ring-1 ring-violet-300/25', label: 'Marketing', accent: 'from-violet-500/18 via-blue-500/8 to-transparent' };
-    if (t.includes('appointment') || t.includes('agendamento') || t.includes('consulta')) return { icon: <Calendar size={18} />, iconWrap: 'bg-emerald-500/12 text-emerald-400 ring-1 ring-emerald-400/25', label: 'Agenda', accent: 'from-emerald-500/18 via-cyan-500/8 to-transparent' };
-    if (t.includes('payment') || t.includes('pagamento') || t.includes('paid')) return { icon: <CreditCard size={18} />, iconWrap: 'bg-sky-500/12 text-sky-400 ring-1 ring-sky-400/25', label: 'Pagamento', accent: 'from-sky-500/18 via-blue-500/8 to-transparent' };
-    if (t.includes('withdrawal') || t.includes('saque') || t.includes('financeiro')) return { icon: <Wallet size={18} />, iconWrap: 'bg-blue-500/12 text-blue-400 ring-1 ring-blue-400/25', label: 'Financeiro', accent: 'from-blue-500/18 via-indigo-500/8 to-transparent' };
-    if (t.includes('document') || t.includes('prontuario') || t.includes('prontuário')) return { icon: <FileText size={18} />, iconWrap: 'bg-violet-500/12 text-violet-300 ring-1 ring-violet-300/25', label: 'Documento', accent: 'from-violet-500/18 via-purple-500/8 to-transparent' };
-    if (t.includes('exercise') || t.includes('exercicio') || t.includes('exercício')) return { icon: <Activity size={18} />, iconWrap: 'bg-cyan-500/12 text-cyan-300 ring-1 ring-cyan-300/25', label: 'Exercícios', accent: 'from-cyan-500/18 via-blue-500/8 to-transparent' };
-    if (t.includes('support') || t.includes('suporte')) return { icon: <MessageSquare size={18} />, iconWrap: 'bg-amber-500/12 text-amber-300 ring-1 ring-amber-300/25', label: 'Suporte', accent: 'from-amber-500/18 via-orange-500/8 to-transparent' };
-    if (t.includes('subscription') || t.includes('assinatura') || t.includes('plano')) return { icon: <CreditCard size={18} />, iconWrap: 'bg-purple-500/12 text-purple-300 ring-1 ring-violet-300/25', label: 'Assinatura', accent: 'from-purple-500/18 via-violet-500/8 to-transparent' };
-    if (t.includes('profile') || t.includes('patient') || t.includes('paciente')) return { icon: <UserCheck size={18} />, iconWrap: 'bg-indigo-500/12 text-indigo-300 ring-1 ring-indigo-300/25', label: 'Paciente', accent: 'from-indigo-500/18 via-blue-500/8 to-transparent' };
-    if (t.includes('alert') || t.includes('error') || t.includes('warning')) return { icon: <AlertCircle size={18} />, iconWrap: 'bg-rose-500/12 text-rose-300 ring-1 ring-rose-300/25', label: 'Alerta', accent: 'from-rose-500/18 via-red-500/8 to-transparent' };
-    return { icon: <Info size={18} />, iconWrap: 'bg-slate-500/12 text-slate-300 ring-1 ring-white/15', label: 'Sistema', accent: 'from-slate-500/14 via-white/5 to-transparent' };
+    if (t.includes('marketing') || t.includes('campaign')) return { icon: <Sparkles size={18} />, iconWrap: 'bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300', label: 'Marketing', accent: 'from-violet-500/18 via-blue-500/8 to-transparent' };
+    if (t.includes('appointment') || t.includes('agendamento') || t.includes('consulta')) return { icon: <Calendar size={18} />, iconWrap: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400', label: 'Agenda', accent: 'from-emerald-500/18 via-cyan-500/8 to-transparent' };
+    if (t.includes('payment') || t.includes('pagamento') || t.includes('paid')) return { icon: <CreditCard size={18} />, iconWrap: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400', label: 'Pagamento', accent: 'from-sky-500/18 via-blue-500/8 to-transparent' };
+    if (t.includes('withdrawal') || t.includes('saque') || t.includes('financeiro')) return { icon: <Wallet size={18} />, iconWrap: 'bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400', label: 'Financeiro', accent: 'from-blue-500/18 via-indigo-500/8 to-transparent' };
+    if (t.includes('document') || t.includes('prontuario') || t.includes('prontuário')) return { icon: <FileText size={18} />, iconWrap: 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300', label: 'Documento', accent: 'from-violet-500/18 via-purple-500/8 to-transparent' };
+    if (t.includes('exercise') || t.includes('exercicio') || t.includes('exercício')) return { icon: <Activity size={18} />, iconWrap: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-300', label: 'Exercícios', accent: 'from-cyan-500/18 via-blue-500/8 to-transparent' };
+    if (t.includes('support') || t.includes('suporte')) return { icon: <MessageSquare size={18} />, iconWrap: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400', label: 'Suporte', accent: 'from-amber-500/18 via-orange-500/8 to-transparent' };
+    if (t.includes('subscription') || t.includes('assinatura') || t.includes('plano')) return { icon: <CreditCard size={18} />, iconWrap: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300', label: 'Assinatura', accent: 'from-purple-500/18 via-violet-500/8 to-transparent' };
+    if (t.includes('profile') || t.includes('patient') || t.includes('paciente')) return { icon: <UserCheck size={18} />, iconWrap: 'bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300', label: 'Paciente', accent: 'from-indigo-500/18 via-blue-500/8 to-transparent' };
+    if (t.includes('alert') || t.includes('error') || t.includes('warning')) return { icon: <AlertCircle size={18} />, iconWrap: 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300', label: 'Alerta', accent: 'from-rose-500/18 via-red-500/8 to-transparent' };
+    return { icon: <Info size={18} />, iconWrap: 'bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300', label: 'Sistema', accent: 'from-slate-500/14 via-white/5 to-transparent' };
   };
 
   const formatNotificationTime = (value: string) => {
@@ -165,65 +165,124 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <style>{`
-        .fch-notification-popover{background:rgba(2,6,23,.96)!important;color:#f8fafc!important;border-color:rgba(255,255,255,.10)!important}
-        .fch-notification-popover *{opacity:1}
-        html:not(.dark) .fch-notification-popover{background:#fff!important;color:#0f172a!important;border-color:rgba(203,213,225,.9)!important;box-shadow:0 24px 70px -28px rgba(15,23,42,.35)!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-head{background:#fff!important;border-color:#e2e8f0!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-list{background:#fff!important;color:#0f172a!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-footer{background:#fff!important;border-color:#e2e8f0!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-item{background:#fff!important;color:#0f172a!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-item:hover{background:#f8fafc!important}
-        html:not(.dark) .fch-notification-popover .fch-notification-unread{background:#f8fafc!important}
-        html:not(.dark) .fch-notification-popover .fch-light-title{color:#0f172a!important;text-shadow:none!important}
-        html:not(.dark) .fch-notification-popover .fch-light-message{color:#475569!important}
-        html:not(.dark) .fch-notification-popover .fch-light-muted{color:#64748b!important}
-        html:not(.dark) .fch-notification-popover .fch-light-action{color:#2563eb!important}
-        html:not(.dark) .fch-notification-popover .fch-light-icon{color:#475569!important}
-        html:not(.dark) .fch-notification-popover .fch-light-border{border-color:#e2e8f0!important}
-        html:not(.dark) .fch-notification-popover .fch-light-tab-active{background:#eef2ff!important;color:#4338ca!important}
-        html:not(.dark) .fch-notification-popover .fch-light-tab{color:#64748b!important}
-        html:not(.dark) .fch-notification-popover .fch-light-count{background:#e0e7ff!important;color:#4338ca!important}
-        html:not(.dark) .fch-notification-popover .fch-light-close{color:#64748b!important}
-        html:not(.dark) .fch-notification-popover .fch-light-close:hover{background:#f1f5f9!important;color:#0f172a!important}
-        .fch-marketing-modal{position:fixed!important;inset:0!important;width:100vw!important;min-width:100vw!important;height:100vh!important;height:100dvh!important;overflow-y:auto!important;display:grid!important;place-items:center!important;padding:16px!important}
-        .fch-marketing-modal > div{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;margin:0!important;width:min(100%,32rem)!important;max-width:32rem!important}
+        .fch-notification-popover { border-radius: 24px !important; }
+        .fch-notification-popover * { opacity: 1 }
+        .fch-notification-item { border-radius: 16px !important; margin: 4px 8px; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fch-notification-item:hover { transform: translateY(-1px); }
+        
+        /* Tema Claro */
+        html:not(.dark) .fch-notification-popover { background: rgba(255, 255, 255, 0.98) !important; backdrop-filter: blur(20px); border-color: rgba(226, 232, 240, 0.8) !important; box-shadow: 0 32px 80px -20px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15,23,42,0.02) !important; }
+        html:not(.dark) .fch-notification-head { border-color: rgba(241, 245, 249, 1) !important; background: transparent !important; }
+        html:not(.dark) .fch-notification-list { background: transparent !important; color: #0f172a !important; }
+        html:not(.dark) .fch-notification-footer { border-color: rgba(241, 245, 249, 1) !important; background: transparent !important; }
+        html:not(.dark) .fch-notification-item { background: transparent !important; color: #0f172a !important; }
+        html:not(.dark) .fch-notification-item:hover { background: #ffffff !important; border-color: #f1f5f9 !important; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 4px 10px -5px rgba(15, 23, 42, 0.02) !important; }
+        html:not(.dark) .fch-notification-unread { background: #f8fafc !important; border-color: #f1f5f9 !important; }
+        html:not(.dark) .fch-light-title { color: #0f172a !important; text-shadow: none !important; }
+        html:not(.dark) .fch-light-message { color: #475569 !important; }
+        html:not(.dark) .fch-light-muted { color: #64748b !important; }
+        html:not(.dark) .fch-light-action { color: #4f46e5 !important; }
+        html:not(.dark) .fch-light-tab-active { background: #eef2ff !important; color: #4338ca !important; }
+        html:not(.dark) .fch-light-tab { color: #64748b !important; }
+        html:not(.dark) .fch-light-close { color: #64748b !important; }
+        html:not(.dark) .fch-light-close:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+
+        /* Tema Escuro - Mantendo Compatibilidade e Aprimorando */
+        html.dark .fch-notification-popover { background: rgba(2, 6, 23, 0.96) !important; color: #f8fafc !important; border-color: rgba(255, 255, 255, 0.10) !important; }
+        html.dark .fch-notification-item:hover { background: rgba(255, 255, 255, 0.04) !important; border-color: rgba(255, 255, 255, 0.05) !important; }
+        html.dark .fch-notification-unread { background: rgba(255, 255, 255, 0.02) !important; border-color: rgba(255, 255, 255, 0.03) !important; }
+
+        .fch-marketing-modal { position: fixed !important; inset: 0 !important; width: 100vw !important; min-width: 100vw !important; height: 100vh !important; height: 100dvh !important; overflow-y: auto !important; display: grid !important; place-items: center !important; padding: 16px !important; }
+        .fch-marketing-modal > div { position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; width: min(100%, 32rem) !important; max-width: 32rem !important; }
       `}</style>
 
-      <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
+      <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 active:scale-95 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
         <Bell size={21} />
-        {unreadCount > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+        {unreadCount > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-rose-500 px-1.5 text-[9px] font-bold text-white shadow-sm">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, y: -8, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: .98 }} className="fch-notification-popover absolute -right-14 sm:right-0 top-12 z-[100] w-[min(92vw,430px)] overflow-hidden rounded-2xl border shadow-2xl">
-            <div className="fch-notification-head flex items-center justify-between border-b px-4 py-3">
-              <div><h3 className="fch-light-title text-sm font-semibold">Notificações</h3><p className="fch-light-muted mt-0.5 text-xs">{unreadCount ? `${unreadCount} não lida${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia'}</p></div>
-              <div className="flex items-center gap-1">{unreadCount > 0 && <button type="button" onClick={markAllAsRead} className="fch-light-action rounded-lg px-2 py-1 text-xs font-medium">Marcar todas</button>}<button type="button" onClick={() => setIsOpen(false)} className="fch-light-close rounded-lg p-1.5" aria-label="Fechar"><X size={17} /></button></div>
+          <motion.div initial={{ opacity: 0, y: -12, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } }} exit={{ opacity: 0, y: -8, scale: 0.98 }} className="fch-notification-popover absolute -right-14 top-12 z-[100] w-[min(92vw,430px)] overflow-hidden border shadow-2xl sm:right-0">
+            <div className="fch-notification-head flex items-center justify-between border-b px-5 py-4">
+              <div><h3 className="fch-light-title text-[15px] font-bold tracking-tight">Notificações</h3><p className="fch-light-muted mt-0.5 text-xs">{unreadCount ? `${unreadCount} não lida${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia 🎉'}</p></div>
+              <div className="flex items-center gap-2">{unreadCount > 0 && <button type="button" onClick={markAllAsRead} className="fch-light-action rounded-xl px-3 py-1.5 text-xs font-semibold transition hover:bg-blue-50/50 dark:hover:bg-blue-500/10">Marcar lidas</button>}<button type="button" onClick={() => setIsOpen(false)} className="fch-light-close rounded-full p-2 transition" aria-label="Fechar"><X size={18} /></button></div>
             </div>
-            <div className="fch-notification-list flex items-center gap-1 border-b p-2"><button type="button" onClick={() => { setFilter('all'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'all' ? 'fch-light-tab-active' : 'fch-light-tab')}>Todas</button><button type="button" onClick={() => { setFilter('unread'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'unread' ? 'fch-light-tab-active' : 'fch-light-tab')}>Não lidas</button></div>
-            <div className="fch-notification-list max-h-[60vh] overflow-y-auto">
-              {visibleNotifications.length === 0 ? <div className="px-5 py-10 text-center"><Bell className="mx-auto mb-3 text-slate-300" size={28} /><p className="fch-light-muted text-sm">Nenhuma notificação.</p></div> : visibleNotifications.map((notification) => {
+            <div className="fch-notification-list flex items-center gap-2 border-b px-4 py-3">
+              <button type="button" onClick={() => { setFilter('all'); setShowAll(false); }} className={cn('rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors', filter === 'all' ? 'fch-light-tab-active bg-indigo-500/10 text-indigo-400' : 'fch-light-tab hover:bg-slate-50 dark:hover:bg-white/5')}>Todas</button>
+              <button type="button" onClick={() => { setFilter('unread'); setShowAll(false); }} className={cn('rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors', filter === 'unread' ? 'fch-light-tab-active bg-indigo-500/10 text-indigo-400' : 'fch-light-tab hover:bg-slate-50 dark:hover:bg-white/5')}>Não lidas</button>
+            </div>
+            <div className="fch-notification-list max-h-[55vh] overflow-y-auto py-2">
+              {visibleNotifications.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 dark:bg-white/5"><Bell className="text-slate-300 dark:text-slate-600" size={28} /></div>
+                  <p className="fch-light-muted text-[15px] font-medium">Nenhuma notificação por aqui.</p>
+                </div>
+              ) : visibleNotifications.map((notification, index) => {
                 const tone = getNotificationTone(notification.tipo); const marketing = isMarketingNotification(notification); const link = getNotificationLink(notification);
-                return <div key={notification.id} className={cn('fch-notification-item relative border-b border-white/5 px-4 py-3 transition', !notification.lida && 'fch-notification-unread')}>
-                  <button type="button" onClick={() => openNotification(notification)} className="w-full text-left"><div className="flex gap-3"><div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', tone.iconWrap)}>{tone.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="fch-light-title truncate text-sm font-semibold">{notification.titulo || 'Notificação'}</p><p className="fch-light-muted mt-0.5 text-[11px]">{tone.label} · {formatNotificationTime(notification.created_at)}</p></div>{!notification.lida && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}</div><p className="fch-light-message mt-2 line-clamp-2 whitespace-pre-line text-sm leading-relaxed">{notification.mensagem || 'Sem mensagem.'}</p>{(marketing || link) && <span className="fch-light-action mt-2 inline-flex items-center gap-1 text-xs font-semibold">Ver detalhes <ExternalLink size={13} /></span>}</div></div></button>
-                  {notification.tipo && String(notification.tipo).toLowerCase().includes('appointment') && notification.metadata?.action_required && !notification.lida && <div className="mt-3 flex gap-2 pl-12"><button type="button" onClick={() => handleAction(notification, true)} className="flex-1 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => handleAction(notification, false)} className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white">Recusar</button></div>}
-                </div>;
+                return (
+                  <motion.div key={notification.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: index * 0.03 }} className={cn('fch-notification-item relative px-4 py-3.5', !notification.lida && 'fch-notification-unread')}>
+                    <button type="button" onClick={() => openNotification(notification)} className="w-full text-left">
+                      <div className="flex gap-4">
+                        <div className={cn('mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm', tone.iconWrap)}>{tone.icon}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="fch-light-title truncate text-[14px] font-bold">{notification.titulo || 'Notificação'}</p>
+                              <p className="fch-light-muted mt-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide opacity-80">{tone.label} <span className="h-1 w-1 rounded-full bg-current opacity-40"></span> {formatNotificationTime(notification.created_at)}</p>
+                            </div>
+                            {!notification.lida && (
+                              <div className="relative mt-1 flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-60"></span>
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600 dark:bg-violet-400"></span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="fch-light-message mt-2 line-clamp-2 whitespace-pre-line text-[13px] leading-relaxed opacity-90">{notification.mensagem || 'Sem mensagem.'}</p>
+                          {(marketing || link) && <span className="fch-light-action mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold transition-transform group-hover:translate-x-0.5">Ver detalhes <ExternalLink size={14} /></span>}
+                        </div>
+                      </div>
+                    </button>
+                    {notification.tipo && String(notification.tipo).toLowerCase().includes('appointment') && notification.metadata?.action_required && !notification.lida && (
+                      <div className="mt-4 flex gap-2 pl-[60px]">
+                        <button type="button" onClick={() => handleAction(notification, true)} className="flex-1 rounded-xl bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400 dark:hover:bg-emerald-500/25">Confirmar</button>
+                        <button type="button" onClick={() => handleAction(notification, false)} className="flex-1 rounded-xl bg-red-500/10 px-3 py-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25">Recusar</button>
+                      </div>
+                    )}
+                  </motion.div>
+                );
               })}
             </div>
-            {hasMoreNotifications && <button type="button" onClick={() => setShowAll(true)} className="fch-notification-footer w-full border-t px-4 py-3 text-center text-xs font-semibold text-blue-600">Ver todas</button>}
+            {hasMoreNotifications && <button type="button" onClick={() => setShowAll(true)} className="fch-notification-footer w-full border-t px-4 py-3.5 text-center text-[13px] font-bold text-indigo-600 transition hover:bg-slate-50 dark:text-indigo-400 dark:hover:bg-white/5">Ver todas as notificações</button>}
           </motion.div>
         )}
       </AnimatePresence>
 
       {selectedMarketingNotification && createPortal(
         <AnimatePresence>
-          <motion.div className="fch-marketing-modal z-[2147483647] bg-slate-950/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
-            <motion.div initial={{ opacity: 0, y: 20, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: .97 }} onClick={(e) => e.stopPropagation()} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+          <motion.div className="fch-marketing-modal z-[2147483647] bg-slate-950/60 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
+            <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } }} exit={{ opacity: 0, y: 20, scale: 0.96 }} onClick={(e) => e.stopPropagation()} className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
               <div className="flex max-h-[85vh] flex-col">
-                <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4"><h3 className="text-lg font-bold text-slate-900">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3><button type="button" onClick={() => setSelectedMarketingNotification(null)} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Fechar"><X size={19} /></button></div>
-                <div className="overflow-y-auto px-5 py-5">{selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-5 max-h-56 w-full rounded-2xl object-cover" />}<p className="whitespace-pre-line text-sm leading-7 text-slate-700">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p></div>
-                {getNotificationLink(selectedMarketingNotification) && <div className="border-t border-slate-200 bg-white px-5 py-4"><button type="button" onClick={openMarketingDestination} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95">{getMarketingCtaLabel(selectedMarketingNotification)}</button></div>}
+                <div className="relative flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50/80 to-violet-50/80 px-6 py-5 dark:border-slate-800 dark:from-blue-950/40 dark:to-violet-950/40">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20">
+                      <Sparkles size={16} />
+                    </div>
+                    <h3 className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-white">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3>
+                  </div>
+                  <button type="button" onClick={() => setSelectedMarketingNotification(null)} className="rounded-full bg-black/5 p-2 text-slate-500 transition hover:bg-black/10 hover:text-slate-900 dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/20 dark:hover:text-white" aria-label="Fechar"><X size={18} /></button>
+                </div>
+                <div className="overflow-y-auto px-6 py-7">
+                  {selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-6 max-h-60 w-full rounded-[20px] object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10" />}
+                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p>
+                </div>
+                {getNotificationLink(selectedMarketingNotification) && (
+                  <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-5 dark:border-slate-800 dark:bg-slate-900/50">
+                    <button type="button" onClick={openMarketingDestination} className="w-full rounded-[18px] bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_16px_-6px_rgba(79,70,229,0.4)] transition-all hover:scale-[1.01] hover:shadow-[0_12px_24px_-6px_rgba(79,70,229,0.5)] active:scale-[0.98]">
+                      {getMarketingCtaLabel(selectedMarketingNotification)}
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
