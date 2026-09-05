@@ -56,6 +56,7 @@ interface Professional {
   crefito?: string;
   services?: string[];
   sessionPrice?: number | null;
+  gender?: 'male' | 'female' | 'other' | '' | null;
 }
 
 const NOISE_SVG = "data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
@@ -188,7 +189,7 @@ export default function Home() {
 
       let query = supabase
         .from('perfis')
-        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, status_aprovacao')
+        .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, status_aprovacao, genero')
         .eq('tipo_usuario', 'fisioterapeuta')
         .eq('status_aprovacao', 'aprovado')
         .order('nome_completo', { ascending: true })
@@ -217,6 +218,7 @@ export default function Home() {
       const mappedData: Professional[] = (data || []).map((profile: any) => ({
         id: profile.id,
         name: profile.nome_completo || 'Fisioterapeuta',
+        gender: profile.genero || '',
         spec: profile.especialidade || 'Geral',
         fullSpec: profile.especialidade || 'Fisioterapia Geral',
         img: resolveStorageUrl(profile.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
@@ -1774,7 +1776,7 @@ export default function Home() {
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
                           </div>
                           
-                          <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.name}</h4>
+                          <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.gender === 'female' ? 'Dra.' : 'Dr.'} {pro.name}</h4>
                           <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-5">{pro.fullSpec}</p>
 
                           {pro.services && pro.services.length > 0 && (
