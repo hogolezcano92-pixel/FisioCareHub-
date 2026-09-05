@@ -196,7 +196,7 @@ export default function NotificationBell() {
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, y: -8, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: .98 }} className="fch-notification-popover absolute right-0 top-12 z-[100] w-[min(92vw,430px)] overflow-hidden rounded-2xl border shadow-2xl">
+          <motion.div initial={{ opacity: 0, y: -8, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: .98 }} className="fch-notification-popover absolute -right-14 sm:right-0 top-12 z-[100] w-[min(92vw,430px)] overflow-hidden rounded-2xl border shadow-2xl">
             <div className="fch-notification-head flex items-center justify-between border-b px-4 py-3">
               <div><h3 className="fch-light-title text-sm font-semibold">Notificações</h3><p className="fch-light-muted mt-0.5 text-xs">{unreadCount ? `${unreadCount} não lida${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia'}</p></div>
               <div className="flex items-center gap-1">{unreadCount > 0 && <button type="button" onClick={markAllAsRead} className="fch-light-action rounded-lg px-2 py-1 text-xs font-medium">Marcar todas</button>}<button type="button" onClick={() => setIsOpen(false)} className="fch-light-close rounded-lg p-1.5" aria-label="Fechar"><X size={17} /></button></div>
