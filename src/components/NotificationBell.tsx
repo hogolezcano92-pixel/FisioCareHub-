@@ -187,7 +187,8 @@ export default function NotificationBell() {
         html:not(.dark) .fch-notification-popover .fch-light-count{background:#e0e7ff!important;color:#4338ca!important}
         html:not(.dark) .fch-notification-popover .fch-light-close{color:#64748b!important}
         html:not(.dark) .fch-notification-popover .fch-light-close:hover{background:#f1f5f9!important;color:#0f172a!important}
-        html:not(.dark) .fch-marketing-modal{color:#0f172a}
+        .fch-marketing-modal{position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;min-width:100vw!important;min-height:100dvh!important;height:100vh!important;display:flex!important;align-items:center!important;justify-content:center!important}
+        .fch-marketing-modal > div{margin-left:auto!important;margin-right:auto!important}
       `}</style>
 
       <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
@@ -252,7 +253,7 @@ export default function NotificationBell() {
 
       {selectedMarketingNotification && createPortal(
         <AnimatePresence>
-          <motion.div className="fch-marketing-modal fixed inset-0 z-[2147483647] flex items-center justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
+          <motion.div className="fch-marketing-modal fixed inset-0 z-[2147483647] overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
             <motion.div initial={{ opacity: 0, y: 20, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: .97 }} onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
               <div className="flex max-h-[85vh] flex-col">
                 <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
