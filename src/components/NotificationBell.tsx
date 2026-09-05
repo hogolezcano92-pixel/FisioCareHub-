@@ -71,7 +71,7 @@ export default function NotificationBell() {
       const { error } = await supabase.from('notificacoes').update({ lida: true }).eq('user_id', user.id).eq('lida', false);
       if (error) throw error;
       setNotifications((prev) => prev.map((n) => ({ ...n, lida: true }))); return true;
-    } catch (err) { console.error('Error marking all as read:', err); return false; }
+    } catch (err) { console.error('Error marking all notifications as read:', err); return false; }
   };
 
   const getNotificationLink = (notification: any) => {
@@ -165,10 +165,8 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <style>{`
-        /* Base: preserve the existing dark notification appearance. */
         .fch-notification-popover{background:rgba(2,6,23,.96)!important;color:#f8fafc!important;border-color:rgba(255,255,255,.10)!important}
         .fch-notification-popover *{opacity:1}
-        /* Light mode: only scope corrections to the notification component. */
         html:not(.dark) .fch-notification-popover{background:#fff!important;color:#0f172a!important;border-color:rgba(203,213,225,.9)!important;box-shadow:0 24px 70px -28px rgba(15,23,42,.35)!important}
         html:not(.dark) .fch-notification-popover .fch-notification-head{background:#fff!important;border-color:#e2e8f0!important}
         html:not(.dark) .fch-notification-popover .fch-notification-list{background:#fff!important;color:#0f172a!important}
@@ -187,8 +185,8 @@ export default function NotificationBell() {
         html:not(.dark) .fch-notification-popover .fch-light-count{background:#e0e7ff!important;color:#4338ca!important}
         html:not(.dark) .fch-notification-popover .fch-light-close{color:#64748b!important}
         html:not(.dark) .fch-notification-popover .fch-light-close:hover{background:#f1f5f9!important;color:#0f172a!important}
-        .fch-marketing-modal{position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;min-width:100vw!important;min-height:100dvh!important;height:100vh!important;display:flex!important;align-items:center!important;justify-content:center!important}
-        .fch-marketing-modal > div{margin-left:auto!important;margin-right:auto!important}
+        .fch-marketing-modal{position:fixed!important;inset:0!important;width:100vw!important;min-width:100vw!important;height:100vh!important;height:100dvh!important;overflow-y:auto!important;display:grid!important;place-items:center!important;padding:16px!important}
+        .fch-marketing-modal > div{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;margin:0!important;width:min(100%,32rem)!important;max-width:32rem!important}
       `}</style>
 
       <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
@@ -200,50 +198,17 @@ export default function NotificationBell() {
         {isOpen && (
           <motion.div initial={{ opacity: 0, y: -8, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: .98 }} className="fch-notification-popover absolute right-0 top-12 z-[100] w-[min(92vw,430px)] overflow-hidden rounded-2xl border shadow-2xl">
             <div className="fch-notification-head flex items-center justify-between border-b px-4 py-3">
-              <div>
-                <h3 className="fch-light-title text-sm font-semibold">Notificações</h3>
-                <p className="fch-light-muted mt-0.5 text-xs">{unreadCount ? `${unreadCount} não lida${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia'}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                {unreadCount > 0 && <button type="button" onClick={markAllAsRead} className="fch-light-action rounded-lg px-2 py-1 text-xs font-medium">Marcar todas</button>}
-                <button type="button" onClick={() => setIsOpen(false)} className="fch-light-close rounded-lg p-1.5" aria-label="Fechar"><X size={17} /></button>
-              </div>
+              <div><h3 className="fch-light-title text-sm font-semibold">Notificações</h3><p className="fch-light-muted mt-0.5 text-xs">{unreadCount ? `${unreadCount} não lida${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia'}</p></div>
+              <div className="flex items-center gap-1">{unreadCount > 0 && <button type="button" onClick={markAllAsRead} className="fch-light-action rounded-lg px-2 py-1 text-xs font-medium">Marcar todas</button>}<button type="button" onClick={() => setIsOpen(false)} className="fch-light-close rounded-lg p-1.5" aria-label="Fechar"><X size={17} /></button></div>
             </div>
-            <div className="fch-notification-list flex items-center gap-1 border-b p-2">
-              <button type="button" onClick={() => { setFilter('all'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'all' ? 'fch-light-tab-active' : 'fch-light-tab')}>Todas</button>
-              <button type="button" onClick={() => { setFilter('unread'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'unread' ? 'fch-light-tab-active' : 'fch-light-tab')}>Não lidas</button>
-            </div>
+            <div className="fch-notification-list flex items-center gap-1 border-b p-2"><button type="button" onClick={() => { setFilter('all'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'all' ? 'fch-light-tab-active' : 'fch-light-tab')}>Todas</button><button type="button" onClick={() => { setFilter('unread'); setShowAll(false); }} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', filter === 'unread' ? 'fch-light-tab-active' : 'fch-light-tab')}>Não lidas</button></div>
             <div className="fch-notification-list max-h-[60vh] overflow-y-auto">
-              {visibleNotifications.length === 0 ? (
-                <div className="px-5 py-10 text-center"><Bell className="mx-auto mb-3 text-slate-300" size={28} /><p className="fch-light-muted text-sm">Nenhuma notificação.</p></div>
-              ) : visibleNotifications.map((notification) => {
-                const tone = getNotificationTone(notification.tipo);
-                const marketing = isMarketingNotification(notification);
-                const link = getNotificationLink(notification);
-                return (
-                  <div key={notification.id} className={cn('fch-notification-item relative border-b border-white/5 px-4 py-3 transition', !notification.lida && 'fch-notification-unread')}>
-                    <button type="button" onClick={() => openNotification(notification)} className="w-full text-left">
-                      <div className="flex gap-3">
-                        <div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', tone.iconWrap)}>{tone.icon}</div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0"><p className="fch-light-title truncate text-sm font-semibold">{notification.titulo || 'Notificação'}</p><p className="fch-light-muted mt-0.5 text-[11px]">{tone.label} · {formatNotificationTime(notification.created_at)}</p></div>
-                            {!notification.lida && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}
-                          </div>
-                          <p className="fch-light-message mt-2 line-clamp-2 whitespace-pre-line text-sm leading-relaxed">{notification.mensagem || 'Sem mensagem.'}</p>
-                          {marketing && <span className="fch-light-action mt-2 inline-flex items-center gap-1 text-xs font-semibold">Ver detalhes <ExternalLink size={13} /></span>}
-                          {!marketing && link && <span className="fch-light-action mt-2 inline-flex items-center gap-1 text-xs font-semibold">Ver detalhes <ExternalLink size={13} /></span>}
-                        </div>
-                      </div>
-                    </button>
-                    {notification.tipo && String(notification.tipo).toLowerCase().includes('appointment') && notification.metadata?.action_required && !notification.lida && (
-                      <div className="mt-3 flex gap-2 pl-12">
-                        <button type="button" onClick={() => handleAction(notification, true)} className="flex-1 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white">Confirmar</button>
-                        <button type="button" onClick={() => handleAction(notification, false)} className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white">Recusar</button>
-                      </div>
-                    )}
-                  </div>
-                );
+              {visibleNotifications.length === 0 ? <div className="px-5 py-10 text-center"><Bell className="mx-auto mb-3 text-slate-300" size={28} /><p className="fch-light-muted text-sm">Nenhuma notificação.</p></div> : visibleNotifications.map((notification) => {
+                const tone = getNotificationTone(notification.tipo); const marketing = isMarketingNotification(notification); const link = getNotificationLink(notification);
+                return <div key={notification.id} className={cn('fch-notification-item relative border-b border-white/5 px-4 py-3 transition', !notification.lida && 'fch-notification-unread')}>
+                  <button type="button" onClick={() => openNotification(notification)} className="w-full text-left"><div className="flex gap-3"><div className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', tone.iconWrap)}>{tone.icon}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="fch-light-title truncate text-sm font-semibold">{notification.titulo || 'Notificação'}</p><p className="fch-light-muted mt-0.5 text-[11px]">{tone.label} · {formatNotificationTime(notification.created_at)}</p></div>{!notification.lida && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500" />}</div><p className="fch-light-message mt-2 line-clamp-2 whitespace-pre-line text-sm leading-relaxed">{notification.mensagem || 'Sem mensagem.'}</p>{(marketing || link) && <span className="fch-light-action mt-2 inline-flex items-center gap-1 text-xs font-semibold">Ver detalhes <ExternalLink size={13} /></span>}</div></div></button>
+                  {notification.tipo && String(notification.tipo).toLowerCase().includes('appointment') && notification.metadata?.action_required && !notification.lida && <div className="mt-3 flex gap-2 pl-12"><button type="button" onClick={() => handleAction(notification, true)} className="flex-1 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => handleAction(notification, false)} className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white">Recusar</button></div>}
+                </div>;
               })}
             </div>
             {hasMoreNotifications && <button type="button" onClick={() => setShowAll(true)} className="fch-notification-footer w-full border-t px-4 py-3 text-center text-xs font-semibold text-blue-600">Ver todas</button>}
@@ -253,17 +218,11 @@ export default function NotificationBell() {
 
       {selectedMarketingNotification && createPortal(
         <AnimatePresence>
-          <motion.div className="fch-marketing-modal fixed inset-0 z-[2147483647] overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
-            <motion.div initial={{ opacity: 0, y: 20, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: .97 }} onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+          <motion.div className="fch-marketing-modal z-[2147483647] bg-slate-950/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
+            <motion.div initial={{ opacity: 0, y: 20, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: .97 }} onClick={(e) => e.stopPropagation()} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
               <div className="flex max-h-[85vh] flex-col">
-                <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-                  <h3 className="text-lg font-bold text-slate-900">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3>
-                  <button type="button" onClick={() => setSelectedMarketingNotification(null)} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Fechar"><X size={19} /></button>
-                </div>
-                <div className="overflow-y-auto px-5 py-5">
-                  {selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-5 max-h-56 w-full rounded-2xl object-cover" />}
-                  <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p>
-                </div>
+                <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4"><h3 className="text-lg font-bold text-slate-900">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3><button type="button" onClick={() => setSelectedMarketingNotification(null)} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Fechar"><X size={19} /></button></div>
+                <div className="overflow-y-auto px-5 py-5">{selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-5 max-h-56 w-full rounded-2xl object-cover" />}<p className="whitespace-pre-line text-sm leading-7 text-slate-700">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p></div>
                 {getNotificationLink(selectedMarketingNotification) && <div className="border-t border-slate-200 bg-white px-5 py-4"><button type="button" onClick={openMarketingDestination} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-95">{getMarketingCtaLabel(selectedMarketingNotification)}</button></div>}
               </div>
             </motion.div>
