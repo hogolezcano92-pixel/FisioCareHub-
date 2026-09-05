@@ -2833,7 +2833,9 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'marketing' && <AdminMarketing />}\n\n          {!loading && !error && activeTab === 'notifications' && (
+          {activeTab === 'marketing' && <AdminMarketing />}
+
+          {!loading && !error && activeTab === 'notifications' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Email/Template Test Tool */}
               <div className="bg-[var(--surface)] p-8 rounded-[var(--radius)] border border-[var(--border)] shadow-xl">
