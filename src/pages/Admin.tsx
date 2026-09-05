@@ -47,6 +47,7 @@ import {
   DollarSign,
   CreditCard,
   MessageSquare,
+  Megaphone,
   Send,
   Bell,
   Trash2,
