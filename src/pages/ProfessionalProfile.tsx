@@ -412,7 +412,7 @@ export default function ProfessionalProfile() {
                   <div className="flex-1 space-y-4">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-3xl font-black text-white tracking-tight">Dr. {physio.nome_completo || physio.nome}</h1>
+                        <h1 className="text-3xl font-black text-white tracking-tight">{physio.genero === 'female' ? 'Dra.' : 'Dr.'} {physio.nome_completo || physio.nome}</h1>
                         {(physio.aprovado || physio.verificado || physio.status_aprovacao === 'aprovado') && (
                           <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
                             <ShieldCheck size={12} />
@@ -821,7 +821,7 @@ export default function ProfessionalProfile() {
                       <div className="space-y-3 rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                         <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-3">
                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Profissional</span>
-                          <span className="text-right text-sm font-black text-white">Dr(a). {physio.nome_completo || physio.nome}</span>
+                          <span className="text-right text-sm font-black text-white">{physio.genero === 'female' ? 'Dra.' : 'Dr.'} {physio.nome_completo || physio.nome}</span>
                         </div>
                         <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-3">
                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Serviço</span>
