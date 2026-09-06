@@ -167,7 +167,7 @@ export default function NotificationBell() {
       <style>{`
         .fch-notification-popover { border-radius: 24px !important; }
         .fch-notification-popover * { opacity: 1 }
-        .fch-notification-item { border-radius: 16px !important; margin: 4px 8px; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fch-notification-item { border-radius: 20px !important; margin: 6px 10px; border: 1px solid transparent; overflow: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .fch-notification-item:hover { transform: translateY(-1px); }
         
         /* Tema Claro */
@@ -175,9 +175,9 @@ export default function NotificationBell() {
         html:not(.dark) .fch-notification-head { border-color: rgba(241, 245, 249, 1) !important; background: transparent !important; }
         html:not(.dark) .fch-notification-list { background: transparent !important; color: #0f172a !important; }
         html:not(.dark) .fch-notification-footer { border-color: rgba(241, 245, 249, 1) !important; background: transparent !important; }
-        html:not(.dark) .fch-notification-item { background: transparent !important; color: #0f172a !important; }
-        html:not(.dark) .fch-notification-item:hover { background: #ffffff !important; border-color: #f1f5f9 !important; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 4px 10px -5px rgba(15, 23, 42, 0.02) !important; }
-        html:not(.dark) .fch-notification-unread { background: #f8fafc !important; border-color: #f1f5f9 !important; }
+        html:not(.dark) .fch-notification-item { color: #0f172a !important; }
+        html:not(.dark) .fch-notification-item:hover { background: rgba(255,255,255,0.94) !important; border-color: #e2e8f0 !important; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.07), 0 4px 10px -5px rgba(15, 23, 42, 0.03) !important; }
+        html:not(.dark) .fch-notification-unread { border-color: rgba(99,102,241,0.14) !important; box-shadow: 0 8px 24px -10px rgba(79,70,229,0.22) !important; }
         html:not(.dark) .fch-light-title { color: #0f172a !important; text-shadow: none !important; }
         html:not(.dark) .fch-light-message { color: #475569 !important; }
         html:not(.dark) .fch-light-muted { color: #64748b !important; }
@@ -194,14 +194,19 @@ export default function NotificationBell() {
 
         .fch-marketing-modal { position: fixed !important; inset: 0 !important; width: 100vw !important; min-width: 100vw !important; height: 100vh !important; height: 100dvh !important; overflow-y: auto !important; display: grid !important; place-items: center !important; padding: 16px !important; }
         .fch-marketing-modal > div { position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; width: min(100%, 32rem) !important; max-width: 32rem !important; }
-        .fch-marketing-modal .fch-marketing-card { border-radius: 32px !important; box-shadow: 0 32px 90px -28px rgba(15, 23, 42, 0.42), 0 0 0 1px rgba(255,255,255,0.45) !important; }
-        html:not(.dark) .fch-marketing-modal .fch-marketing-header { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(239,246,255,0.98), rgba(245,243,255,0.98) 58%, rgba(250,245,255,0.98)) !important; }
-        html:not(.dark) .fch-marketing-modal .fch-marketing-header::after { content: ''; position: absolute; width: 170px; height: 170px; right: -70px; top: -90px; border-radius: 999px; background: radial-gradient(circle, rgba(124,58,237,0.18), transparent 68%); pointer-events: none; }
-        html:not(.dark) .fch-marketing-modal .fch-marketing-body { background: #ffffff !important; }
-        html:not(.dark) .fch-marketing-modal .fch-marketing-footer { background: linear-gradient(180deg, rgba(248,250,252,0.7), rgba(245,243,255,0.72)) !important; }
-        html.dark .fch-marketing-modal .fch-marketing-card { box-shadow: 0 32px 90px -28px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.05) !important; }
-        html.dark .fch-marketing-modal .fch-marketing-header { position: relative; overflow: hidden; }
-        html.dark .fch-marketing-modal .fch-marketing-header::after { content: ''; position: absolute; width: 170px; height: 170px; right: -70px; top: -90px; border-radius: 999px; background: radial-gradient(circle, rgba(124,58,237,0.16), transparent 68%); pointer-events: none; }
+        .fch-marketing-modal .fch-marketing-card { border-radius: 32px !important; background: #ffffff !important; color: #0f172a !important; border: 1px solid rgba(226,232,240,0.9) !important; box-shadow: 0 32px 90px -28px rgba(15,23,42,0.42), 0 0 0 1px rgba(255,255,255,0.7) !important; }
+        .fch-marketing-modal .fch-marketing-header { position: relative !important; overflow: hidden !important; background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 48%, #f5f3ff 100%) !important; border-color: #e2e8f0 !important; }
+        .fch-marketing-modal .fch-marketing-header::before { content: ''; position: absolute; width: 220px; height: 220px; left: -120px; top: -150px; border-radius: 999px; background: radial-gradient(circle, rgba(59,130,246,0.16), transparent 68%); pointer-events: none; }
+        .fch-marketing-modal .fch-marketing-header::after { content: ''; position: absolute; width: 190px; height: 190px; right: -75px; top: -100px; border-radius: 999px; background: radial-gradient(circle, rgba(124,58,237,0.20), transparent 68%); pointer-events: none; }
+        .fch-marketing-modal .fch-marketing-body { background: #ffffff !important; color: #334155 !important; }
+        .fch-marketing-modal .fch-marketing-body p { color: #334155 !important; }
+        .fch-marketing-modal .fch-marketing-footer { background: linear-gradient(180deg, #f8fafc 0%, #f5f3ff 100%) !important; border-color: #e2e8f0 !important; }
+        html.dark .fch-marketing-modal .fch-marketing-card { background: #0f172a !important; color: #f8fafc !important; border-color: rgba(255,255,255,0.10) !important; box-shadow: 0 32px 90px -28px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.05) !important; }
+        html.dark .fch-marketing-modal .fch-marketing-header { background: linear-gradient(135deg, rgba(30,41,59,0.98), rgba(49,46,129,0.30) 58%, rgba(88,28,135,0.28)) !important; border-color: #1e293b !important; }
+        html.dark .fch-marketing-modal .fch-marketing-header::after { background: radial-gradient(circle, rgba(124,58,237,0.16), transparent 68%); }
+        html.dark .fch-marketing-modal .fch-marketing-body { background: #0f172a !important; color: #cbd5e1 !important; }
+        html.dark .fch-marketing-modal .fch-marketing-body p { color: #cbd5e1 !important; }
+        html.dark .fch-marketing-modal .fch-marketing-footer { background: rgba(15,23,42,0.96) !important; border-color: #1e293b !important; }
       `}</style>
 
       <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 active:scale-95 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
@@ -229,8 +234,8 @@ export default function NotificationBell() {
               ) : visibleNotifications.map((notification, index) => {
                 const tone = getNotificationTone(notification.tipo); const marketing = isMarketingNotification(notification); const link = getNotificationLink(notification);
                 return (
-                  <motion.div key={notification.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: index * 0.03 }} className={cn('fch-notification-item relative px-4 py-3.5', !notification.lida && 'fch-notification-unread')}>
-                    <button type="button" onClick={() => openNotification(notification)} className="w-full text-left">
+                  <motion.div key={notification.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: index * 0.03 }} className={cn('fch-notification-item relative bg-gradient-to-r', tone.accent, !notification.lida && 'fch-notification-unread')}>
+                    <button type="button" onClick={() => openNotification(notification)} className="w-full px-4 py-3.5 text-left">
                       <div className="flex gap-4">
                         <div className={cn('mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm', tone.iconWrap)}>{tone.icon}</div>
                         <div className="min-w-0 flex-1">
@@ -252,7 +257,7 @@ export default function NotificationBell() {
                       </div>
                     </button>
                     {notification.tipo && String(notification.tipo).toLowerCase().includes('appointment') && notification.metadata?.action_required && !notification.lida && (
-                      <div className="mt-4 flex gap-2 pl-[60px]">
+                      <div className="mt-4 flex gap-2 px-4 pb-4 pl-[76px]">
                         <button type="button" onClick={() => handleAction(notification, true)} className="flex-1 rounded-xl bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400 dark:hover:bg-emerald-500/25">Confirmar</button>
                         <button type="button" onClick={() => handleAction(notification, false)} className="flex-1 rounded-xl bg-red-500/10 px-3 py-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-500/20 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25">Recusar</button>
                       </div>
