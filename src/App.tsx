@@ -1,3 +1,9 @@
+/**
+ * FisioCareHub Frontend
+ * Segurança e Conexão (CORS) - Cabeçalhos para AI Studio
+ * Access-Control-Allow-Origin: *
+ */
+
 import { Routes, Route, Link, useNavigate, useLocation, BrowserRouter, Navigate } from 'react-router-dom';
 import { supabase, initSupabase } from './lib/supabase';
 import { fetchConfig } from './config/api';
@@ -11,22 +17,22 @@ import {
   ClipboardCheck,
   ScanSearch,
   LogOut, 
-  LogIn, 
-  UserPlus, 
+  LogIn,
+  UserPlus,
   Menu, 
   X, 
-  Home as HomeIcon, 
-  Calendar as CalendarIcon, 
-  MessageSquare, 
-  AlertTriangle, 
-  FileSignature, 
-  ShieldCheck, 
-  Bell, 
-  Video, 
-  Loader2, 
-  Info, 
-  BookOpen, 
-  Search, 
+  Home as HomeIcon,
+  Calendar as CalendarIcon,
+  MessageSquare,
+  AlertTriangle,
+  FileSignature,
+  ShieldCheck,
+  Bell,
+  Video,
+  Loader2,
+  Info,
+  BookOpen,
+  Search,
   Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,9 +40,11 @@ import { cn } from './lib/utils';
 import { getEffectivePlan, hasPlanAccess } from './lib/planAccess';
 import { Toaster, toast } from 'sonner';
 
+// i18n
 import './i18n/config';
 import { useTranslation } from 'react-i18next';
 
+// Components
 import NotificationBell from './components/NotificationBell';
 import Logo from './components/Logo';
 import AuthGate from './components/AuthGate';
@@ -52,10 +60,12 @@ import IncomingVideoCallListener from './components/IncomingVideoCallListener';
 import WelcomeVideoModal from './components/WelcomeVideoModal';
 import { preloadOnboardingCriticalAssets } from './utils/preloadOnboardingAssets';
 
+// Lazy Components
 const Onboarding = lazy(() => import('./components/Onboarding'));
 const Sidebar = lazy(() => import('./components/Sidebar'));
 const AguardandoAprovacao = lazy(() => import('./pages/AguardandoAprovacao'));
 
+// Lazy Pages
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -69,7 +79,6 @@ const Chat = lazy(() => import('./pages/Chat'));
 const Documents = lazy(() => import('./pages/Documents'));
 const Admin = lazy(() => import('./pages/Admin'));
 const AdminStories = lazy(() => import('./pages/AdminStories'));
-const FinancialReconciliation = lazy(() => import('./pages/admin/FinancialReconciliation'));
 const Patients = lazy(() => import('./pages/Patients'));
 const PatientDetails = lazy(() => import('./pages/PatientDetails'));
 const PatientActivityHistory = lazy(() => import('./pages/PatientActivityHistory'));
@@ -117,13 +126,29 @@ const PageLoader = () => {
   );
 };
 
-interface ErrorBoundaryProps { children: ReactNode; }
-interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Uncaught error:", error, errorInfo); }
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       let errorMessage = "Ocorreu um erro inesperado.";
@@ -132,53 +157,117 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           const parsed = JSON.parse(this.state.error.message);
           errorMessage = `Erro no Banco de Dados: ${parsed.error}`;
         }
-      } catch { errorMessage = this.state.error?.message || errorMessage; }
+      } catch {
+        errorMessage = this.state.error?.message || errorMessage;
+      }
+
       return (
         <div className="min-h-screen bg-bg-general flex items-center justify-center p-4 transition-colors duration-300">
           <div className="glass-card p-12 rounded-[3rem] max-w-md w-full text-center">
-            <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6"><AlertTriangle size={48} /></div>
+            <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={48} />
+            </div>
             <h2 className="text-3xl font-display font-black text-text-main mb-2 tracking-tight">Ops! Algo deu errado</h2>
             <p className="text-xl text-text-muted mb-8 leading-relaxed">{errorMessage}</p>
-            <button onClick={() => window.location.reload()} className="w-full py-5 bg-primary text-white rounded-full font-black text-xl hover:bg-primary-hover transition-all shadow-premium">Recarregar Aplicativo</button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-5 bg-primary text-white rounded-full font-black text-xl hover:bg-primary-hover transition-all shadow-premium"
+            >
+              Recarregar Aplicativo
+            </button>
           </div>
         </div>
       );
     }
+
     return this.props.children;
   }
 }
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
+
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.body.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+
+    document.documentElement.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+    document.body.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    });
+
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
   }, [pathname, search]);
+
   return null;
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { user, profile, loading, profileLoading } = useAuth();
   const location = useLocation();
-  if (loading || profileLoading) return <PageLoader />;
+
+  // AuthGate é responsável pelo estado de perfil ausente/erro. Aqui só
+  // exibimos loader enquanto existe carregamento real em andamento.
+  if (loading || profileLoading) {
+    return <PageLoader />;
+  }
+
   if (!user) {
     const redirectTarget = `${location.pathname}${location.search || ''}`;
-    try { if (redirectTarget && redirectTarget !== '/login') sessionStorage.setItem('pendingRedirect', redirectTarget); } catch {}
-    return <Navigate to={`/login?redirectTo=${encodeURIComponent(redirectTarget)}`} state={{ from: location }} replace />;
+
+    try {
+      if (redirectTarget && redirectTarget !== '/login') {
+        sessionStorage.setItem('pendingRedirect', redirectTarget);
+      }
+    } catch {}
+
+    return (
+      <Navigate
+        to={`/login?redirectTo=${encodeURIComponent(redirectTarget)}`}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
+
   const userRole = profile?.tipo_usuario;
   const isAdmin = userRole === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const isApproved = profile?.status_aprovacao === 'aprovado';
-  if (userRole === 'fisioterapeuta' && !isApproved && !isAdmin && location.pathname !== '/aguardando-aprovacao' && location.pathname !== '/profile') return <Navigate to="/aguardando-aprovacao" replace />;
-  if (location.pathname === '/aguardando-aprovacao' && (isApproved || isAdmin || userRole === 'paciente')) return <Navigate to="/dashboard" replace />;
+
+  if (userRole === 'fisioterapeuta' && !isApproved && !isAdmin) {
+    if (location.pathname !== '/aguardando-aprovacao' && location.pathname !== '/profile') {
+      return <Navigate to="/aguardando-aprovacao" replace />;
+    }
+  }
+
+  if (location.pathname === '/aguardando-aprovacao' && (isApproved || isAdmin || userRole === 'paciente')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(userRole)) {
     if (isAdmin) return <Navigate to="/admin" replace />;
     return <Navigate to="/dashboard" replace />;
   }
-  if (location.pathname === '/dashboard' && isAdmin) return <Navigate to="/admin" replace />;
-  if (location.pathname.startsWith('/admin') && !isAdmin) return <Navigate to="/dashboard" replace />;
+
+  if (location.pathname === '/dashboard' && isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (location.pathname === '/admin' && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -189,87 +278,606 @@ function Navbar() {
   const isInstalled = useIsAppInstalled();
   const navigate = useNavigate();
   const location = useLocation();
+
   const currentPlan = getEffectivePlan(profile, subscription);
   const isPro = hasPlanAccess(currentPlan, 'pro');
   const isApproved = profile?.status_aprovacao === 'aprovado' || profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
-  const handleLogout = async () => { await signOut(); navigate('/'); };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   const navItems = useMemo(() => [
-    { name: t('nav.home'), path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')), icon: HomeIcon },
+    { 
+      name: t('nav.home'), 
+      path: user ? (profile?.tipo_usuario === 'admin' ? '/admin' : (isApproved || profile?.tipo_usuario === 'paciente' ? '/dashboard' : '/aguardando-aprovacao')) : '/', 
+      icon: HomeIcon 
+    },
     { name: t('nav.about'), path: '/sobre', icon: Info },
     { name: t('nav.library'), path: '/biblioteca', icon: BookOpen },
     { name: t('nav.find_physio'), path: '/buscar-fisio', icon: Search },
     ...(user ? [
-      ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' ? [{ name: t('nav.admin'), path: '/admin', icon: ShieldCheck }, { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch }] : []),
-      ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [{ name: t('nav.patients'), path: '/patients', icon: User }, { name: 'Minha Agenda', path: '/agenda', icon: CalendarIcon }, { name: t('nav.exercises'), path: '/exercises', icon: Activity }, { name: t('nav.triages'), path: '/physio/triages', icon: ClipboardCheck }, { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch }, { name: t('nav.records'), path: '/records', icon: FileText }, { name: t('nav.documents'), path: '/documents', icon: FileSignature }, { name: t('nav.subscription'), path: '/subscription', icon: Crown }] : []),
-      ...(profile?.tipo_usuario === 'paciente' ? [{ name: t('nav.pain_diary'), path: '/diario', icon: Activity }, { name: t('nav.workouts'), path: '/treinos', icon: Activity }, { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon }, { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch }, { name: t('nav.records'), path: '/records', icon: FileText }, { name: t('nav.documents'), path: '/documents', icon: FileSignature }, { name: t('nav.triage'), path: '/triage', icon: ClipboardCheck }] : []),
-      ...(isApproved || profile?.tipo_usuario === 'paciente' ? [{ name: t('nav.chat'), path: '/chat', icon: MessageSquare }] : []),
-      ...(isApproved || profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'admin' ? [{ name: t('nav.profile'), path: '/profile', icon: User }] : []),
+      ...(profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com' 
+        ? [
+            { name: t('nav.admin'), path: '/admin', icon: ShieldCheck },
+            { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
+          ] 
+        : []),
+
+      ...(profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin' && isApproved ? [
+        { name: t('nav.patients'), path: '/patients', icon: User },
+        { name: 'Minha Agenda', path: '/agenda', icon: CalendarIcon },
+        { name: t('nav.exercises'), path: '/exercises', icon: Activity },
+        { name: t('nav.triages'), path: '/physio/triages', icon: ClipboardCheck },
+        { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
+        { name: t('nav.records'), path: '/records', icon: FileText },
+        { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+        { name: t('nav.subscription'), path: '/subscription', icon: Crown },
+      ] : []),
+
+      ...(profile?.tipo_usuario === 'paciente' ? [
+        { name: t('nav.pain_diary'), path: '/diario', icon: Activity },
+        { name: t('nav.workouts'), path: '/treinos', icon: Activity },
+        { name: t('nav.appointments'), path: '/appointments', icon: CalendarIcon },
+        { name: 'Exames IA', path: '/exames-ia', icon: ScanSearch },
+        { name: t('nav.records'), path: '/records', icon: FileText },
+        { name: t('nav.documents'), path: '/documents', icon: FileSignature },
+        { name: t('nav.triage'), path: '/triage', icon: ClipboardCheck },
+      ] : []),
+
+      ...(isApproved || profile?.tipo_usuario === 'paciente' ? [
+        { name: t('nav.chat'), path: '/chat', icon: MessageSquare },
+      ] : []),
+      ...(isApproved || profile?.tipo_usuario === 'paciente' || profile?.tipo_usuario === 'admin' ? [
+        { name: t('nav.profile'), path: '/profile', icon: User },
+      ] : []),
     ] : [])
   ], [user, profile, isApproved, t]);
+
   return (
     <nav className="public-navbar bg-background/60 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div className="flex justify-between h-20"><div className="flex items-center"><Link to={user ? "/dashboard" : "/"} className="group transition-transform active:scale-95"><Logo variant="light" size="sm" /></Link></div>
-        <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {navItems.filter(item => !(['/login', '/register'].includes(item.path) && user)).map((item) => { const isActive = location.pathname === item.path; return <Link key={`${item.name}-${item.path}`} to={item.path} className={cn("relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black transition-all group", isActive ? "text-white" : "text-slate-400 hover:text-white hover:bg-white/5")}><item.icon size={16} className={cn("transition-transform group-hover:scale-110", isActive ? "text-blue-400" : "text-slate-500")} /><span className="hidden lg:inline">{item.name}</span>{isActive && <motion.div layoutId="nav-active" className="absolute inset-0 bg-blue-600/10 border border-blue-500/20 rounded-xl -z-10" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}</Link>; })}
-          {!isInstalled && <button type="button" onClick={openInstallAppGuide} className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all group cursor-pointer"><Smartphone size={16} className="transition-transform group-hover:scale-110 text-slate-500 group-hover:text-blue-400" /><span className="hidden lg:inline">📱 Instalar App</span><span className="lg:hidden">📱 Instalar</span></button>}
-          {user ? <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10"><Link to="/profile" className="flex items-center gap-3 group p-1 pr-3 rounded-2xl hover:bg-white/5 transition-all"><div className="relative"><img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} className="w-9 h-9 rounded-xl object-cover border border-white/10 group-hover:border-blue-500 transition-all" alt="profile" />{isPro && <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center border-2 border-slate-950"><Crown size={8} className="text-slate-950" /></div>}</div><div className="text-left hidden lg:block"><p className="text-[13px] font-black text-white leading-tight">{profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}{(profile?.nome_completo || '').split(' ')[0]}</p><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">{isPro ? 'Premium' : 'Free'}</p></div></Link><div className="flex items-center gap-1"><ThemeQuickToggle /><div className="relative z-[100] overflow-visible"><NotificationBell /></div><button onClick={handleLogout} className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all" title={t('nav.logout')}><LogOut size={20} /></button></div></div> : <div className="flex items-center gap-3 ml-4"><Link to="/login" className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors">{t('nav.login', 'Entrar')}</Link><Link to="/register" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-50 text-white hover:text-blue-600 rounded-xl text-[13px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95">{t('nav.register', 'Cadastrar')}</Link></div>}
-        </div><div className="md:hidden flex items-center gap-2">{user && <ThemeQuickToggle />}{user && <NotificationBell />}<button onClick={() => setIsOpen(!isOpen)} className="public-navbar-menu-button text-white hover:text-primary p-2">{isOpen ? <X size={24} /> : <Menu size={24} />}</button></div></div></div>
-      <AnimatePresence>{isOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="fch-public-mobile-menu md:hidden bg-slate-950 border-b border-white/5 overflow-hidden"><div className="fch-public-mobile-menu-panel px-4 pt-2 pb-6 space-y-2">{navItems.map((item) => <Link key={`${item.name}-${item.path}`} to={item.path} onClick={() => setIsOpen(false)} className={cn("fch-public-mobile-menu-link flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black transition-all", location.pathname === item.path ? "bg-blue-600/10 text-white border border-blue-500/20" : "text-slate-400 hover:text-white hover:bg-white/5")}><item.icon size={20} className={location.pathname === item.path ? "text-blue-400" : "text-slate-500"} />{item.name}</Link>)}{!isInstalled && <button type="button" onClick={() => { openInstallAppGuide(); setIsOpen(false); }} className="fch-public-mobile-menu-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"><Smartphone size={20} className="text-slate-500" /><span>📱 Instalar App</span></button>}{user ? <div className="pt-4 mt-4 border-t border-white/5 space-y-2"><Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all"><User size={20} className="text-slate-500" />{t('nav.profile')}</Link><button onClick={() => { handleLogout(); setIsOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-rose-400 hover:bg-rose-500/10 transition-all text-left"><LogOut size={20} />{t('nav.logout')}</button></div> : <div className="pt-4 mt-4 border-t border-white/5 space-y-3"><Link to="/login" onClick={() => setIsOpen(false)} className="fch-public-mobile-menu-login flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"><LogIn size={20} className="text-blue-400" />Entrar</Link><Link to="/register" onClick={() => setIsOpen(false)} className="fch-public-mobile-menu-register flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"><UserPlus size={20} />Começar Agora</Link></div>}</div></motion.div>}</AnimatePresence>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-20">
+          <div className="flex items-center">
+            <Link to={user ? "/dashboard" : "/"} className="group transition-transform active:scale-95">
+              <Logo variant="light" size="sm" />
+            </Link>
+          </div>
+
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            {navItems.filter(item => !(['/login', '/register'].includes(item.path) && user)).map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={`${item.name}-${item.path}`}
+                  to={item.path}
+                  className={cn(
+                    "relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black transition-all group",
+                    isActive 
+                      ? "text-white" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <item.icon size={16} className={cn("transition-transform group-hover:scale-110", isActive ? "text-blue-400" : "text-slate-500")} />
+                  <span className="hidden lg:inline">{item.name}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 bg-blue-600/10 border border-blue-500/20 rounded-xl -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+
+            {!isInstalled && (
+              <button
+                type="button"
+                onClick={openInstallAppGuide}
+                className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all group cursor-pointer"
+              >
+                <Smartphone size={16} className="transition-transform group-hover:scale-110 text-slate-500 group-hover:text-blue-400" />
+                <span className="hidden lg:inline">📱 Instalar App</span>
+                <span className="lg:hidden">📱 Instalar</span>
+              </button>
+            )}
+
+            {user ? (
+              <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
+                <Link to="/profile" className="flex items-center gap-3 group p-1 pr-3 rounded-2xl hover:bg-white/5 transition-all">
+                  <div className="relative">
+                    <img 
+                      src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
+                      className="w-9 h-9 rounded-xl object-cover border border-white/10 group-hover:border-blue-500 transition-all"
+                      alt="profile"
+                    />
+                    {isPro && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center border-2 border-slate-950">
+                        <Crown size={8} className="text-slate-950" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left hidden lg:block">
+                    <p className="text-[13px] font-black text-white leading-tight">
+                      {profile?.tipo_usuario === 'fisioterapeuta' ? (profile?.genero === 'female' ? 'Dra. ' : 'Dr. ') : ''}
+                      {(profile?.nome_completo || '').split(' ')[0]}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">
+                      {isPro ? 'Premium' : 'Free'}
+                    </p>
+                  </div>
+                </Link>
+                <div className="flex items-center gap-1">
+                  <ThemeQuickToggle />
+                  <div className="relative z-[100] overflow-visible">
+                  <NotificationBell />
+                </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                    title={t('nav.logout')}
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 ml-4">
+                <Link 
+                  to="/login" 
+                  className="px-5 py-2.5 text-[13px] font-black text-slate-300 hover:text-white transition-colors"
+                >
+                  {t('nav.login', 'Entrar')}
+                </Link>
+                <Link 
+                  to="/register" 
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-50 text-white hover:text-blue-600 rounded-xl text-[13px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                >
+                  {t('nav.register', 'Cadastrar')}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="md:hidden flex items-center gap-2">
+            {user && <ThemeQuickToggle />}
+            {user && <NotificationBell />}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="public-navbar-menu-button text-white hover:text-primary p-2"
+            >
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="fch-public-mobile-menu md:hidden bg-slate-950 border-b border-white/5 overflow-hidden"
+          >
+            <div className="fch-public-mobile-menu-panel px-4 pt-2 pb-6 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={`${item.name}-${item.path}`}
+                  to={item.path}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "fch-public-mobile-menu-link flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black transition-all",
+                    location.pathname === item.path 
+                      ? "bg-blue-600/10 text-white border border-blue-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <item.icon size={20} className={location.pathname === item.path ? "text-blue-400" : "text-slate-500"} />
+                  {item.name}
+                </Link>
+              ))}
+
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    openInstallAppGuide();
+                    setIsOpen(false);
+                  }}
+                  className="fch-public-mobile-menu-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <Smartphone size={20} className="text-slate-500" />
+                  <span>📱 Instalar App</span>
+                </button>
+              )}
+
+              {user ? (
+                <div className="pt-4 mt-4 border-t border-white/5 space-y-2">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-black text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    <User size={20} className="text-slate-500" />
+                    {t('nav.profile')}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-base font-black text-rose-400 hover:bg-rose-500/10 transition-all text-left"
+                  >
+                    <LogOut size={20} />
+                    {t('nav.logout')}
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="fch-public-mobile-menu-login flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                  >
+                    <LogIn size={20} className="text-blue-400" />
+                    Entrar
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsOpen(false)}
+                    className="fch-public-mobile-menu-register flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl text-base font-black text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    <UserPlus size={20} />
+                    Começar Agora
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
 
 function NotificationHandler() {
-  const { user } = useAuth(); const audioRef = useRef<HTMLAudioElement | null>(null); const isInitialLoad = useRef(true);
-  useEffect(() => { audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'); const timer = setTimeout(() => { isInitialLoad.current = false; }, 3000); return () => clearTimeout(timer); }, []);
-  const playSound = () => { if (audioRef.current) audioRef.current.play().catch(e => console.error("Erro ao tocar som de notificação:", e)); };
-  useEffect(() => { if (!user) return; const channel = supabase.channel(`notificacoes_${user.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notificacoes', filter: `user_id=eq.${user.id}` }, (payload) => { if (!isInitialLoad.current) { const notification = payload.new; playSound(); toast.info(notification.titulo, { description: notification.mensagem, action: notification.link ? { label: "Ver", onClick: () => window.location.href = notification.link } : undefined }); } }).subscribe(); const appointmentsChannel = supabase.channel(`agendamentos_realtime_${user.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agendamentos', filter: `fisio_id=eq.${user.id}` }, () => { if (!isInitialLoad.current) { playSound(); toast.success("Novo Agendamento", { description: "Você recebeu uma nova solicitação de consulta." }); } }).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agendamentos', filter: `paciente_id=eq.${user.id}` }, () => { if (!isInitialLoad.current) { playSound(); toast.success("Agendamento Registrado", { description: "Sua solicitação de consulta foi enviada com sucesso." }); } }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'agendamentos' }, (payload) => { if (!isInitialLoad.current) { const record = payload.new as any; if (record && (record.paciente_id === user.id || record.fisio_id === user.id)) { playSound(); toast.info("Agendamento Atualizado", { description: `O status do agendamento foi alterado para: ${record.status}` }); } } }).subscribe(); return () => { supabase.removeChannel(channel); supabase.removeChannel(appointmentsChannel); }; }, [user]);
+  const { user } = useAuth();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitialLoad = useRef(true);
+
+  useEffect(() => {
+    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+
+    const timer = setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const playSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(e => console.error("Erro ao tocar som de notificação:", e));
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`notificacoes_${user.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notificacoes',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('[Realtime] Global notification received:', payload);
+        if (!isInitialLoad.current) {
+          const notification = payload.new;
+          playSound();
+          toast.info(notification.titulo, {
+            description: notification.mensagem,
+            action: notification.link ? {
+              label: "Ver",
+              onClick: () => window.location.href = notification.link
+            } : undefined
+          });
+        }
+      })
+      .subscribe((status) => {
+        console.log('[Realtime] Global notification subscription status:', status);
+      });
+
+    const appointmentsChannel = supabase
+      .channel(`agendamentos_realtime_${user.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'agendamentos',
+        filter: `fisio_id=eq.${user.id}`
+      }, () => {
+        if (!isInitialLoad.current) {
+          playSound();
+          toast.success("Novo Agendamento", {
+            description: "Você recebeu uma nova solicitação de consulta."
+          });
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'agendamentos',
+        filter: `paciente_id=eq.${user.id}`
+      }, () => {
+        if (!isInitialLoad.current) {
+          playSound();
+          toast.success("Agendamento Registrado", {
+            description: "Sua solicitação de consulta foi enviada com sucesso."
+          });
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'agendamentos'
+      }, (payload) => {
+        if (!isInitialLoad.current) {
+          const record = payload.new as any;
+          if (record && (record.paciente_id === user.id || record.fisio_id === user.id)) {
+            playSound();
+            toast.info("Agendamento Atualizado", {
+              description: `O status do agendamento foi alterado para: ${record.status}`
+            });
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log('[Realtime] Appointments subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(appointmentsChannel);
+    };
+  }, [user]);
+
   return null;
 }
 
 function HeaderObserver() {
   const location = useLocation();
-  useEffect(() => { const updateHeaderHeight = () => { const headers = document.querySelectorAll('header, nav.sticky, nav.fixed'); let activeHeader: HTMLElement | null = null; for (const h of Array.from(headers) as HTMLElement[]) { const rect = h.getBoundingClientRect(); const style = window.getComputedStyle(h); if (style.position === 'fixed' && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') { activeHeader = h; break; } } document.documentElement.style.setProperty('--header-height', activeHeader ? `${activeHeader.offsetHeight}px` : '0px'); }; updateHeaderHeight(); window.addEventListener('resize', updateHeaderHeight); const observer = new MutationObserver(updateHeaderHeight); observer.observe(document.body, { childList: true, subtree: true, attributes: true }); return () => { window.removeEventListener('resize', updateHeaderHeight); observer.disconnect(); }; }, [location.pathname]);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      const headers = document.querySelectorAll('header, nav.sticky, nav.fixed');
+      let activeHeader: HTMLElement | null = null;
+
+      for (const h of Array.from(headers) as HTMLElement[]) {
+        const rect = h.getBoundingClientRect();
+        const style = window.getComputedStyle(h);
+        const isFixed = style.position === 'fixed';
+
+        if (isFixed && rect.top <= 5 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden') {
+          activeHeader = h;
+          break;
+        }
+      }
+
+      if (activeHeader) {
+        const height = activeHeader.offsetHeight;
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      } else {
+        document.documentElement.style.setProperty('--header-height', '0px');
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+
+    const observer = new MutationObserver(updateHeaderHeight);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      observer.disconnect();
+    };
+  }, [location.pathname]);
+
   return null;
 }
 
-const isPasswordRecoveryUrl = (location: ReturnType<typeof useLocation>) => { const rawUrl = `${location.pathname}${location.search}${location.hash}`; return location.pathname === '/reset-password' || rawUrl.includes('type=recovery') || rawUrl.includes('access_token=') || rawUrl.includes('refresh_token=') || rawUrl.includes('error_code=otp_expired'); };
+const isPasswordRecoveryUrl = (location: ReturnType<typeof useLocation>) => {
+  const rawUrl = `${location.pathname}${location.search}${location.hash}`;
+
+  return (
+    location.pathname === '/reset-password' ||
+    rawUrl.includes('type=recovery') ||
+    rawUrl.includes('access_token=') ||
+    rawUrl.includes('refresh_token=') ||
+    rawUrl.includes('error_code=otp_expired')
+  );
+};
 
 function AppContent() {
-  const { user, profile } = useAuth(); const [isSidebarOpen, setIsSidebarOpen] = useState(false); const [isChatConversationActive, setIsChatConversationActive] = useState(false); const location = useLocation(); const navigate = useNavigate(); const isPasswordRecovery = isPasswordRecoveryUrl(location);
-  const isPatientArea = useMemo(() => user && profile?.tipo_usuario === 'paciente', [user, profile]); const isPhysioArea = useMemo(() => user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin', [user, profile]); const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]); const isLoginPage = location.pathname === '/login'; const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname) || isPasswordRecovery; const isLandingPage = !isPasswordRecovery && (location.pathname === '/' || location.pathname === '/home'); const isAdminPage = useMemo(() => location.pathname.startsWith('/admin') || location.pathname === '/preview', [location.pathname]); const isApproved = profile?.status_aprovacao === 'aprovado'; const isWaitingPage = location.pathname === '/aguardando-aprovacao';
-  const showSidebar = useMemo(() => user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea), [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]);
-  useEffect(() => { const handleChatActiveChange = (event: Event) => { const customEvent = event as CustomEvent<{ active?: boolean }>; setIsChatConversationActive(Boolean(customEvent.detail?.active)); }; window.addEventListener('fch-chat-active-change', handleChatActiveChange); return () => window.removeEventListener('fch-chat-active-change', handleChatActiveChange); }, []);
-  useEffect(() => { if (location.pathname !== '/chat') setIsChatConversationActive(false); }, [location.pathname]);
-  const showMobileBottomNavigation = useMemo(() => Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage && (location.pathname !== '/chat' || !isChatConversationActive)), [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage, location.pathname, isChatConversationActive]);
-  useEffect(() => { if (isPasswordRecovery && location.pathname !== '/reset-password') navigate(`/reset-password${location.search}${location.hash}`, { replace: true }); const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => { if (event === 'PASSWORD_RECOVERY') navigate('/reset-password', { replace: true }); }); return () => subscription.unsubscribe(); }, [isPasswordRecovery, location.pathname, location.search, location.hash, navigate]);
+  const { user, profile } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatConversationActive, setIsChatConversationActive] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isPasswordRecovery = isPasswordRecoveryUrl(location);
+
+  const isPatientArea = useMemo(() => user && profile?.tipo_usuario === 'paciente', [user, profile]);
+  const isPhysioArea = useMemo(() => user && profile?.tipo_usuario === 'fisioterapeuta' && profile?.tipo_usuario !== 'admin', [user, profile]);
+  const isAdminArea = useMemo(() => user && (profile?.tipo_usuario === 'admin' || user?.email?.toLowerCase() === 'hogolezcano92@gmail.com'), [user, profile]);
+  const isLoginPage = location.pathname === '/login';
+  const isAuthPage = ['/login', '/register', '/reset-password'].includes(location.pathname) || isPasswordRecovery;
+  const isLandingPage = !isPasswordRecovery && (location.pathname === '/' || location.pathname === '/home');
+  const isAdminPage = useMemo(() => location.pathname.startsWith('/admin') || location.pathname === '/preview', [location.pathname]);
+
+  const isApproved = profile?.status_aprovacao === 'aprovado';
+  const isWaitingPage = location.pathname === '/aguardando-aprovacao';
+
+  const showSidebar = useMemo(() => 
+    user && !isLandingPage && !isAuthPage && location.pathname !== '/preview' && !isAdminPage && !isWaitingPage && (isApproved || isAdminArea || isPatientArea),
+    [user, isLandingPage, isAuthPage, location.pathname, isAdminPage, isWaitingPage, isApproved, isAdminArea, isPatientArea]
+  );
+
+  useEffect(() => {
+    const handleChatActiveChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ active?: boolean }>;
+      setIsChatConversationActive(Boolean(customEvent.detail?.active));
+    };
+
+    window.addEventListener('fch-chat-active-change', handleChatActiveChange);
+    return () => window.removeEventListener('fch-chat-active-change', handleChatActiveChange);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname !== '/chat') {
+      setIsChatConversationActive(false);
+    }
+  }, [location.pathname]);
+
+  const showMobileBottomNavigation = useMemo(() =>
+    Boolean(showSidebar && (isPatientArea || isPhysioArea) && !isAdminPage && !isWaitingPage && (location.pathname !== '/chat' || !isChatConversationActive)),
+    [showSidebar, isPatientArea, isPhysioArea, isAdminPage, isWaitingPage, location.pathname, isChatConversationActive]
+  );
+
+  useEffect(() => {
+    if (isPasswordRecovery && location.pathname !== '/reset-password') {
+      navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [isPasswordRecovery, location.pathname, location.search, location.hash, navigate]);
+
   return (
     <div className="min-h-screen bg-bg-general font-sans text-text-main flex transition-colors duration-300">
-      <HeaderObserver /><ScrollToTop /><LGPDModal /><InstallAppGuide /><Toaster position="top-right" richColors closeButton /><IncomingVideoCallListener /><WelcomeVideoModal userId={user?.id} userRole={profile?.tipo_usuario} />
+      <HeaderObserver />
+      <ScrollToTop />
+      <LGPDModal />
+      <InstallAppGuide />
+      <Toaster position="top-right" richColors closeButton />
+      <IncomingVideoCallListener />
+      <WelcomeVideoModal userId={user?.id} userRole={profile?.tipo_usuario} />
+
       <ErrorBoundary>
-        {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}<NotificationHandler /><ProfileCompletionPrompt />
+        {showSidebar && <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />}
+        <NotificationHandler />
+        <ProfileCompletionPrompt />
         <div className={cn("flex-1 flex flex-col min-w-0 bg-bg-general min-h-screen", !isLoginPage && "pt-header")}>
           {showSidebar && <DesktopTopBar />}
-          {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[90] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem]"><Logo variant="dark" size="sm" /><div className="flex items-center gap-3"><ThemeQuickToggle /><NotificationBell /><button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"><Menu size={24} /></button></div></header>)}
-          <main className={cn("flex-1 w-full flex flex-col min-w-0 relative z-10", isLoginPage ? "max-w-none bg-transparent rounded-none shadow-none" : "bg-background rounded-t-[20px] shadow-2xl", location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage || isLoginPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")}>
-            <div className={cn("flex-1 w-full", !isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8", showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10 2xl:p-12 max-w-[1920px] 3xl:max-w-[2400px] mx-auto", showMobileBottomNavigation && "pb-28 md:pb-0")}>
+          {!isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage ? <Navbar /> : (showSidebar && (
+            <header className="lg:hidden bg-white/95 dark:bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 fixed top-0 left-0 right-0 z-[90] px-4 sm:px-6 h-16 flex items-center justify-between pt-[env(safe-area-inset-top)] min-h-[4rem] w-full shadow-sm dark:shadow-lg rounded-b-[1.15rem]">
+              <Logo variant="dark" size="sm" />
+              <div className="flex items-center gap-3">
+                <ThemeQuickToggle />
+                <NotificationBell />
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <Menu size={24} />
+                </button>
+              </div>
+            </header>
+          ))}
+
+          <main className={cn(
+            "flex-1 w-full flex flex-col min-w-0 relative z-10",
+            isLoginPage ? "max-w-none bg-transparent rounded-none shadow-none" : "bg-background rounded-t-[20px] shadow-2xl",
+            location.pathname === '/chat' || showSidebar || isAdminPage || isWaitingPage || isLoginPage ? "max-w-none" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          )}>
+            <div className={cn(
+              "flex-1 w-full",
+              !isLoginPage && !showSidebar && !isAdminPage && !isWaitingPage && location.pathname !== '/chat' && "py-4 md:py-8",
+              showSidebar && location.pathname !== '/chat' && "p-4 md:p-8 lg:p-10 2xl:p-12 max-w-[1920px] 3xl:max-w-[2400px] mx-auto",
+              showMobileBottomNavigation && "pb-28 md:pb-0"
+            )}>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={isPasswordRecovery ? <Navigate to={`/reset-password${location.search}${location.hash}`} replace /> : (user ? <Navigate to="/dashboard" replace /> : <Home />)} />
                   <Route path="/home" element={isPasswordRecovery ? <Navigate to={`/reset-password${location.search}${location.hash}`} replace /> : (user ? <Navigate to="/dashboard" replace /> : <Home />)} />
-                  <Route path="/login" element={<Login />} /><Route path="/register" element={<Register />} /><Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/aguardando-aprovacao" element={<ProtectedRoute><AguardandoAprovacao /></ProtectedRoute>} />
-                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /><Route path="/descubra" element={<ProtectedRoute><Discover /></ProtectedRoute>} /><Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} /><Route path="/jornada" element={<ProtectedRoute allowedRoles={['paciente']}><RecoveryJourney /></ProtectedRoute>} /><Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} /><Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} /><Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} /><Route path="/exames-ia" element={<ProtectedRoute><ExamAnalysis /></ProtectedRoute>} /><Route path="/clinical-tests" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><ClinicalTestsHub /></ProGuard></ProtectedRoute>} /><Route path="/exam-ai" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} /><Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} /><Route path="/artigos-cientificos" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} /><Route path="/clinical-updates" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} /><Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} /><Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} /><Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} /><Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} /><Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} /><Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} /><Route path="/patients/:id/activity-history" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientActivityHistory /></ProtectedRoute>} /><Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="basic"><Agenda /></ProGuard></ProtectedRoute>} /><Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Exercises /></ProGuard></ProtectedRoute>} /><Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} /><Route path="/treinos" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} /><Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioTriages /></ProGuard></ProtectedRoute>} /><Route path="/guia" element={<ProtectedRoute><Guide /></ProtectedRoute>} /><Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationsList /></ProGuard></ProtectedRoute>} /><Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} /><Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} /><Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} /><Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} /><Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} /><Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="free"><Documents /></ProGuard></ProtectedRoute>} />
+
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/descubra" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+                  <Route path="/diario" element={<ProtectedRoute allowedRoles={['paciente']}><DailyJournal /></ProtectedRoute>} />
+                  <Route path="/jornada" element={<ProtectedRoute allowedRoles={['paciente']}><RecoveryJourney /></ProtectedRoute>} />
+                  <Route path="/triage" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+                  <Route path="/triagem-ia" element={<ProtectedRoute allowedRoles={['paciente']}><Triage /></ProtectedRoute>} />
+                  <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
+                  <Route path="/exames-ia" element={<ProtectedRoute><ExamAnalysis /></ProtectedRoute>} />
+                  <Route path="/clinical-tests" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><ClinicalTestsHub /></ProGuard></ProtectedRoute>} />
+                  <Route path="/exam-ai" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
+                  <Route path="/diagnostico-ia" element={<ProtectedRoute><Navigate to="/exames-ia" replace /></ProtectedRoute>} />
+                  <Route path="/artigos-cientificos" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} />
+                  <Route path="/clinical-updates" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ClinicalUpdates /></ProtectedRoute>} />
+                  <Route path="/clinical-updates/:id" element={<ProtectedRoute><ClinicalUpdateDetail /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/area-paciente" element={<ProtectedRoute allowedRoles={['paciente']}><Profile /></ProtectedRoute>} />
+                  <Route path="/appointments" element={<ProtectedRoute allowedRoles={['paciente']}><Appointments /></ProtectedRoute>} />
+                  <Route path="/patients" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Patients /></ProtectedRoute>} />
+                  <Route path="/patients/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientDetails /></ProtectedRoute>} />
+                  <Route path="/patients/:id/activity-history" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PatientActivityHistory /></ProtectedRoute>} />
+                  <Route path="/agenda" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="basic"><Agenda /></ProGuard></ProtectedRoute>} />
+                  <Route path="/exercises" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><Exercises /></ProGuard></ProtectedRoute>} />
+                  <Route path="/patient/exercises" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
+                  <Route path="/treinos" element={<ProtectedRoute allowedRoles={['paciente']}><PatientExercises /></ProtectedRoute>} />
+                  <Route path="/physio/triages" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioTriages /></ProGuard></ProtectedRoute>} />
+                  <Route path="/guia" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
+                  <Route path="/physio/evaluations" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationsList /></ProGuard></ProtectedRoute>} />
+                  <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
+                  <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
+                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                  <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+                  <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
+                  <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="free"><Documents /></ProGuard></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
                   <Route path="/admin/stories" element={<ProtectedRoute allowedRoles={['admin']}><AdminStories /></ProtectedRoute>} />
-                  <Route path="/admin/financial-reconciliation" element={<ProtectedRoute allowedRoles={['admin']}><FinancialReconciliation /></ProtectedRoute>} />
                   <Route path="/preview" element={<ProtectedRoute allowedRoles={['admin']}><AppPreview /></ProtectedRoute>} />
-                  <Route path="/about" element={<About />} /><Route path="/sobre" element={<About />} /><Route path="/partner" element={<Partner />} /><Route path="/seja-parceiro" element={<Partner />} /><Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} /><Route path="/loja" element={<ProtectedRoute><ProductStore /></ProtectedRoute>} /><Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} /><Route path="/physio/:id" element={<ProfessionalProfile />} /><Route path="/credencial/:id" element={<ProfessionalProfile />} /><Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} /><Route path="/termos" element={<Terms />} /><Route path="/privacidade" element={<Privacy />} /><Route path="/verificar-assinatura/:code" element={<VerifySignature />} /><Route path="/biblioteca" element={<HealthLibrary />} /><Route path="/biblioteca/:slug" element={<LibraryMaterialDetail />} /><Route path="/buscar-fisio" element={<FindPhysio />} /><Route path="/fisioterapeuta" element={<FindPhysio />} /><Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} /><Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><FinanceServiceSettings /></ProGuard></ProtectedRoute>} /><Route path="/opportunities" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioOpportunities /></ProGuard></ProtectedRoute>} /><Route path="/patient/requests" element={<ProtectedRoute allowedRoles={['paciente']}><PatientOpportunityRequests /></ProtectedRoute>} /><Route path="/telehealth" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Telehealth /></ProGuard></ProtectedRoute>} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/sobre" element={<About />} />
+                  <Route path="/partner" element={<Partner />} />
+                  <Route path="/seja-parceiro" element={<Partner />} />
+                  <Route path="/patient/library" element={<ProtectedRoute allowedRoles={['paciente']}><HealthLibrary /></ProtectedRoute>} />
+                  <Route path="/loja" element={<ProtectedRoute><ProductStore /></ProtectedRoute>} />
+                  <Route path="/agendamento/confirmar" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ConfirmAppointment /></ProtectedRoute>} />
+                  <Route path="/physio/:id" element={<ProfessionalProfile />} />
+                  <Route path="/credencial/:id" element={<ProfessionalProfile />} />
+                  <Route path="/pagamento/:id" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+                  <Route path="/termos" element={<Terms />} />
+                  <Route path="/privacidade" element={<Privacy />} />
+                  <Route path="/verificar-assinatura/:code" element={<VerifySignature />} />
+                  <Route path="/biblioteca" element={<HealthLibrary />} />
+                  <Route path="/biblioteca/:slug" element={<LibraryMaterialDetail />} />
+                  <Route path="/buscar-fisio" element={<FindPhysio />} />
+                  <Route path="/fisioterapeuta" element={<FindPhysio />} />
+                  <Route path="/dashboard/fisio" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><PhysioDashboard /></ProtectedRoute>} />
+                  <Route path="/finance/settings" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><FinanceServiceSettings /></ProGuard></ProtectedRoute>} />
+                  <Route path="/opportunities" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioOpportunities /></ProGuard></ProtectedRoute>} />
+                  <Route path="/patient/requests" element={<ProtectedRoute allowedRoles={['paciente']}><PatientOpportunityRequests /></ProtectedRoute>} />
+                  <Route path="/telehealth" element={<ProtectedRoute><ProGuard requiredPlan="pro"><Telehealth /></ProGuard></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </div>
+
             {!isAdminPage && location.pathname !== '/chat' && <Footer />}
           </main>
+
           {showMobileBottomNavigation && <BottomNavigation />}
         </div>
       </ErrorBoundary>
@@ -278,10 +886,88 @@ function AppContent() {
 }
 
 export default function App() {
-  const [configLoaded, setConfigLoaded] = useState(false); const [showSplash, setShowSplash] = useState(true); const [showOnboarding, setShowOnboarding] = useState(false); const [error, setError] = useState<string | null>(null);
-  useEffect(() => { const initialize = async () => { console.log("Iniciando aplicação..."); const timeoutId = setTimeout(() => { console.warn("Inicialização demorou demais, forçando carregamento..."); setConfigLoaded(true); }, 4000); try { await fetchConfig(); initSupabase(); clearTimeout(timeoutId); setConfigLoaded(true); console.log("Aplicação inicializada com sucesso."); } catch (err: any) { clearTimeout(timeoutId); console.error("Erro na inicialização:", err); setError(err.message || "Erro ao carregar configurações do sistema."); } }; initialize(); }, []);
-  useEffect(() => { if (configLoaded) { const hasCompletedOnboarding = localStorage.getItem('onboarding_completed'); if (!hasCompletedOnboarding) { preloadOnboardingCriticalAssets(); setShowOnboarding(true); } setShowSplash(false); } }, [configLoaded]);
-  const handleOnboardingComplete = () => { localStorage.setItem('onboarding_completed', 'true'); setShowOnboarding(false); };
-  if (error) return <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4"><div className="bg-white p-8 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-sky-100"><AlertTriangle size={48} className="text-red-500 mx-auto mb-4" /><h2 className="text-2xl font-black mb-2">Erro de Inicialização</h2><p className="text-slate-500 mb-6">{error}</p><button onClick={() => window.location.reload()} className="w-full py-4 bg-sky-500 text-white rounded-full font-black">Tentar Novamente</button></div></div>;
-  return <>{showSplash ? <PageLoader /> : showOnboarding ? <Suspense fallback={<PageLoader />}><Onboarding onComplete={handleOnboardingComplete} /></Suspense> : <div className="block"><BrowserRouter><AuthProvider><AuthGate><Suspense fallback={<PageLoader />}><AppContent /></Suspense></AuthGate></AuthProvider></BrowserRouter></div>}</>;
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initialize = async () => {
+      console.log("Iniciando aplicação...");
+      const timeoutId = setTimeout(() => {
+        console.warn("Inicialização demorou demais, forçando carregamento...");
+        setConfigLoaded(true);
+      }, 4000);
+
+      try {
+        await fetchConfig();
+        initSupabase();
+
+        clearTimeout(timeoutId);
+        setConfigLoaded(true);
+        console.log("Aplicação inicializada com sucesso.");
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        console.error("Erro na inicialização:", err);
+        setError(err.message || "Erro ao carregar configurações do sistema.");
+      }
+    };
+
+    initialize();
+  }, []);
+
+  useEffect(() => {
+    if (configLoaded) {
+      const hasCompletedOnboarding = localStorage.getItem('onboarding_completed');
+      if (!hasCompletedOnboarding) {
+        preloadOnboardingCriticalAssets();
+        setShowOnboarding(true);
+      }
+      setShowSplash(false);
+    }
+  }, [configLoaded]);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('onboarding_completed', 'true');
+    setShowOnboarding(false);
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-sky-100">
+          <AlertTriangle size={48} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black mb-2">Erro de Inicialização</h2>
+          <p className="text-slate-500 mb-6">{error}</p>
+          <button onClick={() => window.location.reload()} className="w-full py-4 bg-sky-500 text-white rounded-full font-black">
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {showSplash ? (
+        <PageLoader />
+      ) : showOnboarding ? (
+        <Suspense fallback={<PageLoader />}>
+          <Onboarding onComplete={handleOnboardingComplete} />
+        </Suspense>
+      ) : (
+        <div className="block">
+          <BrowserRouter>
+            <AuthProvider>
+              <AuthGate>
+                <Suspense fallback={<PageLoader />}>
+                  <AppContent />
+                </Suspense>
+              </AuthGate>
+            </AuthProvider>
+          </BrowserRouter>
+        </div>
+      )}
+    </>
+  );
 }
