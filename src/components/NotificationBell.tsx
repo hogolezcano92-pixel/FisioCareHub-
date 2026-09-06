@@ -194,6 +194,14 @@ export default function NotificationBell() {
 
         .fch-marketing-modal { position: fixed !important; inset: 0 !important; width: 100vw !important; min-width: 100vw !important; height: 100vh !important; height: 100dvh !important; overflow-y: auto !important; display: grid !important; place-items: center !important; padding: 16px !important; }
         .fch-marketing-modal > div { position: relative !important; top: auto !important; left: auto !important; right: auto !important; bottom: auto !important; margin: 0 !important; width: min(100%, 32rem) !important; max-width: 32rem !important; }
+        .fch-marketing-modal .fch-marketing-card { border-radius: 32px !important; box-shadow: 0 32px 90px -28px rgba(15, 23, 42, 0.42), 0 0 0 1px rgba(255,255,255,0.45) !important; }
+        html:not(.dark) .fch-marketing-modal .fch-marketing-header { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(239,246,255,0.98), rgba(245,243,255,0.98) 58%, rgba(250,245,255,0.98)) !important; }
+        html:not(.dark) .fch-marketing-modal .fch-marketing-header::after { content: ''; position: absolute; width: 170px; height: 170px; right: -70px; top: -90px; border-radius: 999px; background: radial-gradient(circle, rgba(124,58,237,0.18), transparent 68%); pointer-events: none; }
+        html:not(.dark) .fch-marketing-modal .fch-marketing-body { background: #ffffff !important; }
+        html:not(.dark) .fch-marketing-modal .fch-marketing-footer { background: linear-gradient(180deg, rgba(248,250,252,0.7), rgba(245,243,255,0.72)) !important; }
+        html.dark .fch-marketing-modal .fch-marketing-card { box-shadow: 0 32px 90px -28px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.05) !important; }
+        html.dark .fch-marketing-modal .fch-marketing-header { position: relative; overflow: hidden; }
+        html.dark .fch-marketing-modal .fch-marketing-header::after { content: ''; position: absolute; width: 170px; height: 170px; right: -70px; top: -90px; border-radius: 999px; background: radial-gradient(circle, rgba(124,58,237,0.16), transparent 68%); pointer-events: none; }
       `}</style>
 
       <button type="button" onClick={() => setIsOpen((v) => !v)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-700 active:scale-95 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" aria-label="Notificações">
@@ -261,25 +269,29 @@ export default function NotificationBell() {
       {selectedMarketingNotification && createPortal(
         <AnimatePresence>
           <motion.div className="fch-marketing-modal z-[2147483647] bg-slate-950/60 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedMarketingNotification(null)}>
-            <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } }} exit={{ opacity: 0, y: 20, scale: 0.96 }} onClick={(e) => e.stopPropagation()} className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <motion.div initial={{ opacity: 0, y: 20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } }} exit={{ opacity: 0, y: 20, scale: 0.96 }} onClick={(e) => e.stopPropagation()} className="fch-marketing-card overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
               <div className="flex max-h-[85vh] flex-col">
-                <div className="relative flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50/80 to-violet-50/80 px-6 py-5 dark:border-slate-800 dark:from-blue-950/40 dark:to-violet-950/40">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20">
-                      <Sparkles size={16} />
+                <div className="fch-marketing-header relative flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50/80 to-violet-50/80 px-6 py-5 dark:border-slate-800 dark:from-blue-950/40 dark:to-violet-950/40">
+                  <div className="relative z-10 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-violet-500/20 ring-4 ring-white/60 dark:ring-white/5">
+                      <Sparkles size={17} />
                     </div>
-                    <h3 className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-white">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-300">FisioCareHub</span>
+                      <h3 className="mt-0.5 truncate text-[17px] font-bold tracking-tight text-slate-900 dark:text-white">{selectedMarketingNotification.titulo || 'FisioCareHub'}</h3>
+                    </div>
                   </div>
-                  <button type="button" onClick={() => setSelectedMarketingNotification(null)} className="rounded-full bg-black/5 p-2 text-slate-500 transition hover:bg-black/10 hover:text-slate-900 dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/20 dark:hover:text-white" aria-label="Fechar"><X size={18} /></button>
+                  <button type="button" onClick={() => setSelectedMarketingNotification(null)} className="relative z-10 rounded-full bg-white/70 p-2 text-slate-500 shadow-sm ring-1 ring-slate-900/5 transition-all hover:scale-105 hover:bg-white hover:text-slate-900 dark:bg-white/10 dark:text-slate-400 dark:ring-white/5 dark:hover:bg-white/20 dark:hover:text-white" aria-label="Fechar"><X size={18} /></button>
                 </div>
-                <div className="overflow-y-auto px-6 py-7">
-                  {selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-6 max-h-60 w-full rounded-[20px] object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10" />}
-                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p>
+                <div className="fch-marketing-body overflow-y-auto px-6 py-7">
+                  {selectedMarketingNotification.metadata?.image_url && <img src={selectedMarketingNotification.metadata.image_url} alt="" className="mb-6 max-h-60 w-full rounded-[22px] object-cover shadow-md ring-1 ring-slate-900/5 dark:ring-white/10" />}
+                  <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-300">{selectedMarketingNotification.mensagem || 'Sem mensagem.'}</p>
                 </div>
                 {getNotificationLink(selectedMarketingNotification) && (
-                  <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-5 dark:border-slate-800 dark:bg-slate-900/50">
-                    <button type="button" onClick={openMarketingDestination} className="w-full rounded-[18px] bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-[0_8px_16px_-6px_rgba(79,70,229,0.4)] transition-all hover:scale-[1.01] hover:shadow-[0_12px_24px_-6px_rgba(79,70,229,0.5)] active:scale-[0.98]">
+                  <div className="fch-marketing-footer border-t border-slate-100 bg-slate-50/50 px-6 py-5 dark:border-slate-800 dark:bg-slate-900/50">
+                    <button type="button" onClick={openMarketingDestination} className="group flex w-full items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_24px_-8px_rgba(79,70,229,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-8px_rgba(79,70,229,0.62)] active:translate-y-0">
                       {getMarketingCtaLabel(selectedMarketingNotification)}
+                      <ExternalLink size={15} className="transition-transform group-hover:translate-x-0.5" />
                     </button>
                   </div>
                 )}
