@@ -14,7 +14,7 @@ const EXAM_ANALYSIS_KEYS: Array<keyof ExamAnalysisAIResult> = ['exam_type','resu
 // GPT-OSS 120B is the FisioCareHub's most capable configured reasoning/text model.
 // Vision requests continue to use the dedicated vision models below because GPT-OSS 120B is text-only on Groq.
 const TEXT_MODEL = 'openai/gpt-oss-120b';
-const VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct'];
+const VISION_MODELS  = ['qwen/qwen3.6-27b'];
 const AI_TIMEOUT_MS = 40_000;
 const MAX_IMAGE_DATA_URL_LENGTH = 4_500_000;
 const MAX_EXAM_COMPLETION_TOKENS = 2500;
