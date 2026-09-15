@@ -1780,18 +1780,26 @@ export default function Home() {
                           <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-5">{pro.fullSpec}</p>
 
                           {pro.services && pro.services.length > 0 && (
-                            <div className="w-full mb-6 space-y-2 flex-shrink-0">
+                            <div className="w-full mb-6 space-y-2 mt-auto flex-shrink-0">
                               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
-                              <div className="flex flex-wrap justify-center gap-2 max-h-[60px] overflow-hidden">
-                                {pro.services.map((service) => (
+                              <div className="flex items-center justify-center gap-1.5 w-full">
+                                {pro.services.slice(0, 2).map((service) => (
                                   <span
                                     key={service}
-                                    className="max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-bold text-slate-300"
+                                    className="max-w-[120px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[9px] font-bold text-slate-300"
                                     title={service}
                                   >
                                     {service}
                                   </span>
                                 ))}
+                                {pro.services.length > 2 && (
+                                  <span 
+                                    className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1.5 text-[9px] font-black text-blue-400"
+                                    title={pro.services.slice(2).join(', ')}
+                                  >
+                                    +{pro.services.length - 2}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           )}
