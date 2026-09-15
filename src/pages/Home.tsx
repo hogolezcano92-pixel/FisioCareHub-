@@ -229,7 +229,7 @@ export default function Home() {
         crefito: profile.crefito,
         sessionPrice: profile.preco_sessao != null ? Number(profile.preco_sessao) : null,
         services: Array.isArray(profile.servicos_ofertados)
-          ? profile.servicos_ofertados.filter(Boolean).slice(0, 4)
+          ? profile.servicos_ofertados.filter(Boolean).slice(0, 5) // Carrega 5 para ter o 5º como "+"
           : []
       }));
 
@@ -1782,22 +1782,22 @@ export default function Home() {
                           {pro.services && pro.services.length > 0 && (
                             <div className="w-full mb-6 space-y-2 mt-auto flex-shrink-0">
                               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
-                              <div className="flex items-center justify-center gap-1.5 w-full">
-                                {pro.services.slice(0, 2).map((service) => (
+                              <div className="flex flex-wrap items-center justify-center gap-1.5 w-full max-h-[56px] overflow-hidden">
+                                {pro.services.slice(0, 4).map((service) => (
                                   <span
                                     key={service}
-                                    className="max-w-[120px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[9px] font-bold text-slate-300"
+                                    className="max-w-[140px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[9px] font-bold text-slate-300"
                                     title={service}
                                   >
                                     {service}
                                   </span>
                                 ))}
-                                {pro.services.length > 2 && (
+                                {pro.services.length > 4 && (
                                   <span 
                                     className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1.5 text-[9px] font-black text-blue-400"
-                                    title={pro.services.slice(2).join(', ')}
+                                    title={pro.services.slice(4).join(', ')}
                                   >
-                                    +{pro.services.length - 2}
+                                    +{pro.services.length - 4}
                                   </span>
                                 )}
                               </div>
