@@ -1090,20 +1090,18 @@ export default function Profile() {
         throw new Error('Sessão expirada. Faça login novamente antes de apagar a conta.');
       }
 
-      const response = await fetch('/api/admin/delete-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ userId: user.id, accessToken, selfDelete: true }),
-      });
+      const { data: result, error: deleteError } =
+  await supabase.functions.invoke('delete-user', {
+    body: { userId: user.id },
+  });
 
-      const result = await response.json().catch(() => null);
+if (deleteError) {
+  throw new Error(deleteError.message || 'Erro ao apagar conta.');
+}
 
-      if (!response.ok || !result?.success) {
-        throw new Error(result?.error || `Erro ao apagar conta (HTTP ${response.status}).`);
-      }
+if (!result?.success) {
+  throw new Error(result?.error || 'Erro ao apagar conta.');
+}
 
       if (loadingToast) toast.dismiss(loadingToast);
       await signOut();
