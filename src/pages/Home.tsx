@@ -1780,9 +1780,9 @@ export default function Home() {
                           <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-5">{pro.fullSpec}</p>
 
                           {pro.services && pro.services.length > 0 && (
-                            <div className="w-full mb-6 space-y-2">
+                            <div className="w-full mb-6 space-y-2 flex-shrink-0">
                               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
-                              <div className="flex flex-wrap justify-center gap-2">
+                              <div className="flex flex-wrap justify-center gap-2 max-h-[60px] overflow-hidden">
                                 {pro.services.map((service) => (
                                   <span
                                     key={service}
@@ -1798,7 +1798,7 @@ export default function Home() {
                           
                           <Link
                             to={`/physio/${pro.id}`}
-                            className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto group/btn"
+                            className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto flex-shrink-0 group/btn"
                           >
                             {t('home.view_profile')} <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                           </Link>
