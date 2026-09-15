@@ -495,10 +495,9 @@ export default function Subscription() {
           planKey={selectedPlanForSubscribe}
           mode="subscribe"
           onSuccess={async () => {
-            setSelectedPlanForSubscribe(null);
-            await refreshProfile();
-            await loadDetails();
-          }}
+  setSelectedPlanForSubscribe(null);
+  await refreshProfile();
+}}
           onClose={() => setSelectedPlanForSubscribe(null)}
         />
       )}
