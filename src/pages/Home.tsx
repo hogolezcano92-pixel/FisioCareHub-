@@ -181,12 +181,6 @@ export default function Home() {
       const safeLocationQuery = locationQuery.trim();
       const safeSpecialtyFilter = specialtyFilter.trim();
 
-      console.log('Buscando profissionais com filtros:', {
-        nameQuery: safeNameQuery,
-        locationQuery: safeLocationQuery,
-        specialtyFilter: safeSpecialtyFilter,
-      });
-
       let query = supabase
         .from('perfis')
         .select('id, nome_completo, especialidade, avatar_url, preco_sessao, cidade, bio, localizacao, crefito, servicos_ofertados, tipo_usuario, status_aprovacao, genero')
@@ -209,7 +203,6 @@ export default function Home() {
 
       const { data, error } = await query;
 
-      console.log('Resultado da busca de profissionais:', data);
       if (error) {
         console.error('Erro retornado pelo Supabase (fetchProfessionals):', error);
         throw error;
@@ -229,7 +222,7 @@ export default function Home() {
         crefito: profile.crefito,
         sessionPrice: profile.preco_sessao != null ? Number(profile.preco_sessao) : null,
         services: Array.isArray(profile.servicos_ofertados)
-          ? profile.servicos_ofertados.filter(Boolean).slice(0, 5) // Carrega 5 para ter o 5º como "+"
+          ? profile.servicos_ofertados.filter(Boolean)
           : []
       }));
 
@@ -1744,13 +1737,13 @@ export default function Home() {
                         )}
                       >
                         <motion.div
-                          className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3.5rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-[520px] shadow-2xl"
+                          className="group/card relative bg-white/5 backdrop-blur-xl p-6 sm:p-8 rounded-[3.5rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-[540px] shadow-2xl overflow-hidden"
                         >
-                          <div className="relative mb-8 flex-shrink-0">
+                          <div className="relative mb-5 flex-shrink-0 mt-2">
                             <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
                             <img 
                               src={pro.img} 
-                              className="w-32 h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 transition-all duration-500"
+                              className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2.5rem] border-4 border-white/10 object-cover shadow-2xl relative z-10 transition-all duration-500"
                               alt={pro.name}
                               loading="lazy"
                             />
@@ -1763,80 +1756,66 @@ export default function Home() {
                           </div>
 
                           {pro.crefito && (
-                            <div className="mb-4 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex-shrink-0">
+                            <div className="mb-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex-shrink-0">
                               <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
                                 CREFITO: {pro.crefito}
                               </span>
                             </div>
                           )}
                           
-                          <div className="flex items-center gap-1.5 text-amber-400 mb-3 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 text-amber-400 mb-2 flex-shrink-0">
                             <Star size={14} fill="currentColor" />
                             <span className="text-sm font-black text-white">{pro.rating}</span>
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
                           </div>
                           
-                          <h4 className="text-xl font-black text-white mb-1 tracking-tight flex-shrink-0">{pro.gender === 'female' ? 'Dra.' : 'Dr.'} {pro.name}</h4>
+                          <h4 className="text-lg sm:text-xl font-black text-white mb-1 tracking-tight flex-shrink-0 line-clamp-2 w-full px-2">
+                            {pro.gender === 'female' ? 'Dra.' : 'Dr.'} {pro.name}
+                          </h4>
                           
-                          {/* NOVA ÁREA DE FORMAÇÃO / ESPECIALIDADES COM LIMITE E +X */}
-                          {(() => {
-                            const specList = pro.fullSpec.split(',').map(s => s.trim()).filter(Boolean);
-                            return (
-                              <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 mb-5 flex-shrink-0 max-h-[36px] overflow-hidden w-full px-2">
-                                {specList.slice(0, 4).map((spec, index) => (
-                                  <span 
-                                    key={index} 
-                                    className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] text-center truncate max-w-[120px]"
-                                    title={spec}
-                                  >
-                                    {spec}{index < Math.min(specList.length, 4) - 1 ? ',' : ''}
-                                  </span>
-                                ))}
-                                {specList.length > 4 && (
-                                  <span 
-                                    className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[8px] font-black text-blue-400"
-                                    title={specList.slice(4).join(', ')}
-                                  >
-                                    +{specList.length - 4}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
+                          {/* ESPECIALIDADES - Restaurado para parágrafo limpo para não quebrar a tela */}
+                          <p className="text-blue-400 font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] mb-auto line-clamp-2 px-4 w-full">
+                            {pro.fullSpec}
+                          </p>
 
-                          {/* SERVIÇOS */}
-                          {pro.services && pro.services.length > 0 && (
-                            <div className="w-full mb-6 space-y-2 mt-auto flex-shrink-0">
-                              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
-                              <div className="flex flex-wrap items-center justify-center gap-1.5 w-full max-h-[56px] overflow-hidden">
-                                {pro.services.slice(0, 4).map((service) => (
-                                  <span
-                                    key={service}
-                                    className="max-w-[140px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[9px] font-bold text-slate-300"
-                                    title={service}
-                                  >
-                                    {service}
-                                  </span>
-                                ))}
-                                {pro.services.length > 4 && (
-                                  <span 
-                                    className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1.5 text-[9px] font-black text-blue-400"
-                                    title={pro.services.slice(4).join(', ')}
-                                  >
-                                    +{pro.services.length - 4}
-                                  </span>
-                                )}
+                          {/* FOOTER FIXO (Serviços e Botão de Ver Perfil) */}
+                          <div className="w-full mt-auto flex flex-col flex-shrink-0 justify-end pt-2">
+                            
+                            {/* SERVIÇOS - Limitado a 2 itens e +X */}
+                            {pro.services && pro.services.length > 0 && (
+                              <div className="w-full mb-5 space-y-1.5">
+                                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
+                                <div className="flex flex-wrap items-center justify-center gap-1.5 w-full">
+                                  {pro.services.slice(0, 2).map((service) => (
+                                    <span
+                                      key={service}
+                                      className="max-w-[130px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[9px] font-bold text-slate-300"
+                                      title={service}
+                                    >
+                                      {service}
+                                    </span>
+                                  ))}
+                                  {pro.services.length > 2 && (
+                                    <span 
+                                      className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1.5 text-[9px] font-black text-blue-400"
+                                      title={pro.services.slice(2).join(', ')}
+                                    >
+                                      +{pro.services.length - 2}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                            
+                            {/* BOTÃO VER PERFIL - Blindado no rodapé */}
+                            <Link
+                              to={`/physio/${pro.id}`}
+                              className="w-full py-3.5 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 group/btn"
+                            >
+                              {t('home.view_profile')} <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                            </Link>
+                          </div>
                           
-                          {/* BOTÃO VER PERFIL BLINDADO CONTRA QUEBRA */}
-                          <Link
-                            to={`/physio/${pro.id}`}
-                            className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto flex-shrink-0 group/btn"
-                          >
-                            {t('home.view_profile')} <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                          </Link>
                         </motion.div>
                       </div>
                     ))}
