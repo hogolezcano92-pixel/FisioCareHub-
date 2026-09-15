@@ -1746,7 +1746,7 @@ export default function Home() {
                         <motion.div
                           className="group/card relative bg-white/5 backdrop-blur-xl p-8 rounded-[3.5rem] border border-white/10 hover:bg-white/10 transition-all duration-500 flex flex-col items-center text-center h-[520px] shadow-2xl"
                         >
-                          <div className="relative mb-8">
+                          <div className="relative mb-8 flex-shrink-0">
                             <div className="absolute inset-0 bg-blue-500/20 rounded-[2.5rem] blur-2xl group-hover/card:bg-blue-500/40 transition-colors" />
                             <img 
                               src={pro.img} 
@@ -1763,22 +1763,48 @@ export default function Home() {
                           </div>
 
                           {pro.crefito && (
-                            <div className="mb-4 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                            <div className="mb-4 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex-shrink-0">
                               <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
                                 CREFITO: {pro.crefito}
                               </span>
                             </div>
                           )}
                           
-                          <div className="flex items-center gap-1.5 text-amber-400 mb-3">
+                          <div className="flex items-center gap-1.5 text-amber-400 mb-3 flex-shrink-0">
                             <Star size={14} fill="currentColor" />
                             <span className="text-sm font-black text-white">{pro.rating}</span>
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">({pro.reviews} reviews)</span>
                           </div>
                           
-                          <h4 className="text-xl font-black text-white mb-1 tracking-tight">{pro.gender === 'female' ? 'Dra.' : 'Dr.'} {pro.name}</h4>
-                          <p className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] mb-5">{pro.fullSpec}</p>
+                          <h4 className="text-xl font-black text-white mb-1 tracking-tight flex-shrink-0">{pro.gender === 'female' ? 'Dra.' : 'Dr.'} {pro.name}</h4>
+                          
+                          {/* NOVA ÁREA DE FORMAÇÃO / ESPECIALIDADES COM LIMITE E +X */}
+                          {(() => {
+                            const specList = pro.fullSpec.split(',').map(s => s.trim()).filter(Boolean);
+                            return (
+                              <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 mb-5 flex-shrink-0 max-h-[36px] overflow-hidden w-full px-2">
+                                {specList.slice(0, 4).map((spec, index) => (
+                                  <span 
+                                    key={index} 
+                                    className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] text-center truncate max-w-[120px]"
+                                    title={spec}
+                                  >
+                                    {spec}{index < Math.min(specList.length, 4) - 1 ? ',' : ''}
+                                  </span>
+                                ))}
+                                {specList.length > 4 && (
+                                  <span 
+                                    className="flex-shrink-0 rounded-full border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[8px] font-black text-blue-400"
+                                    title={specList.slice(4).join(', ')}
+                                  >
+                                    +{specList.length - 4}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
 
+                          {/* SERVIÇOS */}
                           {pro.services && pro.services.length > 0 && (
                             <div className="w-full mb-6 space-y-2 mt-auto flex-shrink-0">
                               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Serviços oferecidos</p>
@@ -1804,6 +1830,7 @@ export default function Home() {
                             </div>
                           )}
                           
+                          {/* BOTÃO VER PERFIL BLINDADO CONTRA QUEBRA */}
                           <Link
                             to={`/physio/${pro.id}`}
                             className="w-full py-4 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-all border border-white/10 flex items-center justify-center gap-2 mt-auto flex-shrink-0 group/btn"
