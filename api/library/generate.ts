@@ -66,8 +66,8 @@ const buildExamPrompt = ({ profile, patientRecord, safePatientId, safePatientNam
 
 MÉTODO DE ANÁLISE VISUAL OBRIGATÓRIO (PASSO A PASSO ABCS):
 Você deve processar a imagem (se enviada) na exata ordem abaixo ANTES de gerar qualquer conclusão.
-1. A (Alinhamento): Verifique a congruência articular e eixo geral. Há luxação, subluxação ou desvio grosseiro visível?
-2. B (Bones/Ossos - PRIORIDADE MÁXIMA E ABSOLUTA): Faça uma varredura visual rigorosa em TODAS as linhas corticais ósseas, da base ao topo da imagem. Procure por descontinuidades, degraus, fragmentos, traços radiolúcidos ou impacção (sinais de fratura). Nunca ignore as bordas da imagem ou os ossos longos na base (ex: rádio e ulna em exames de mão/punho).
+1. A (Alinhamento e Lateralidade): Identifique obrigatoriamente a letra de marcação na imagem (como 'D' para Direita ou 'E' para Esquerda). Verifique a congruência articular e eixo geral. Há luxação, subluxação ou desvio grosseiro visível?
+2. B (Bones/Ossos - PRIORIDADE MÁXIMA E ABSOLUTA): É OBRIGATÓRIO relatar explicitamente o status visual de CADA UMA destas estruturas caso aplicável à região: 1. Rádio distal, 2. Ulna distal, 3. Ossos do carpo, 4. Metacarpos, 5. Falanges. Procure rigorosamente por descontinuidades, degraus, fragmentos, traços radiolúcidos ou impacção (sinais de fratura). Nunca ignore as bordas da imagem ou os ossos da base do exame.
 3. C (Cartilagem/Articulações): SÓ avance para cá após confirmar a integridade dos ossos. Avalie espaços articulares e artrose.
 4. S (Soft Tissues): Avalie edema grosseiro ou derrame, se visível.
 
@@ -90,7 +90,7 @@ DADOS DA REQUISIÇÃO:
 - Texto/Laudo prévio: ${safeExamText || 'Não informado.'}
 
 Saída exigida: Retorne EXATAMENTE um objeto JSON válido. Não use formatação markdown (sem \`\`\`json). Não inclua texto fora do JSON.
-Mantenha exatamente estas chaves: {"exam_type":"...","resumo_executivo":"(Resuma a leitura ABCS)","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["(Siga a regra de segurança em caso de trauma)"],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["(Liste riscos de trauma aqui)"],"limitacoes":["..."],"recomendacao_segura":"(Conduta clínica baseada no grau de segurança visual)"}
+Mantenha exatamente estas chaves: {"exam_type":"...","resumo_executivo":"(Resuma a leitura ABCS e informe claramente se o marcador indica lado DIREITO ou ESQUERDO)","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["(Siga a regra de segurança em caso de trauma)"],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["(Liste riscos de trauma aqui)"],"limitacoes":["..."],"recomendacao_segura":"(Conduta clínica baseada no grau de segurança visual)"}
 Chaves estritas permitidas: ${JSON.stringify(EXAM_ANALYSIS_KEYS)}`;
 
 const extractJsonObject = (content: string) => { const trimmed = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim(); try { return JSON.parse(trimmed); } catch { const start = trimmed.indexOf('{'); const end = trimmed.lastIndexOf('}'); if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1)); throw new Error('A IA retornou um laudo em formato inválido. Tente novamente.'); } };
