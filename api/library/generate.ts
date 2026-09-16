@@ -62,70 +62,36 @@ async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse)
   return res.status(200).json({ success: true, fields, warning: patientRecord ? 'Conteúdo gerado por IA. Revise todos os campos antes de salvar no prontuário.' : 'Conteúdo gerado por IA sem validar dados do paciente no backend. Revise antes de salvar.' });
 }
 
-const buildExamPrompt = ({ profile, patientRecord, safePatientId, safePatientName, safeFileName, safeFileUrl, safeFileType, safeExamType, safeClinicalContext, safeExamText, hasImage }: any) => `Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil. Sua função é analisar exames, especialmente imagens musculoesqueléticas, para organizar achados observáveis e gerar um pré-laudo de apoio à revisão profissional. Você NÃO substitui radiologista, ortopedista ou fisioterapeuta e NÃO pode confirmar diagnóstico médico apenas pela imagem.
+const buildExamPrompt = ({ profile, patientRecord, safePatientId, safePatientName, safeFileName, safeFileUrl, safeFileType, safeExamType, safeClinicalContext, safeExamText, hasImage }: any) => `Você é uma IA de apoio clínico de alta precisão do FisioCareHub para fisioterapeutas no Brasil. Sua função é analisar exames radiológicos e musculoesqueléticos.
 
-PROTOCOLO OBRIGATÓRIO PARA IMAGENS MUSCULOESQUELÉTICAS — ABCS:
-A — ALINHAMENTO: identifique a região anatômica e a incidência quando realmente puder. Avalie eixo ósseo, congruência articular, subluxação ou luxação. Não invente incidência ou estrutura que não esteja visível.
-B — BONES/OSSOS: faça uma varredura sistemática de TODAS as estruturas ósseas visíveis, cortical por cortical e ponta a ponta. Procure descontinuidade cortical, degrau, interrupção, angulação, impacção, fragmento ou outro sinal de possível fratura. Depois faça uma SEGUNDA VARREDURA independente procurando novamente fraturas, inclusive em regiões periféricas e sobrepostas. Uma sombra, sobreposição anatômica ou artefato não deve ser chamado de fratura sem evidência suficiente.
-C — CARTILAGEM/ESPAÇO ARTICULAR: avalie espaço articular, redução assimétrica quando realmente visível, esclerose subcondral, osteófitos e outras alterações degenerativas observáveis. Não transforme uma pequena irregularidade em diagnóstico.
-S — PARTES MOLES: descreva somente aumento de volume, derrame ou alteração de partes moles que sejam realmente perceptíveis na imagem. Lembre que radiografia tem limitação para tecidos moles.
+MÉTODO DE ANÁLISE VISUAL OBRIGATÓRIO (PASSO A PASSO ABCS):
+Você deve processar a imagem (se enviada) na exata ordem abaixo ANTES de gerar qualquer conclusão.
+1. A (Alinhamento): Verifique a congruência articular e eixo geral. Há luxação, subluxação ou desvio grosseiro visível?
+2. B (Bones/Ossos - PRIORIDADE MÁXIMA E ABSOLUTA): Faça uma varredura visual rigorosa em TODAS as linhas corticais ósseas, da base ao topo da imagem. Procure por descontinuidades, degraus, fragmentos, traços radiolúcidos ou impacção (sinais de fratura). Nunca ignore as bordas da imagem ou os ossos longos na base (ex: rádio e ulna em exames de mão/punho).
+3. C (Cartilagem/Articulações): SÓ avance para cá após confirmar a integridade dos ossos. Avalie espaços articulares e artrose.
+4. S (Soft Tissues): Avalie edema grosseiro ou derrame, se visível.
 
-ORDEM DE PRIORIDADE:
-1. Segurança/trauma: primeiro procure desalinhamento importante e possível descontinuidade óssea.
-2. Qualidade da imagem: avalie se a imagem está completa, focada, sem excesso de artefatos e se permite interpretação adequada.
-3. ABCS completo.
-4. Somente depois descreva alterações degenerativas ou outros achados.
+REGRA CLÍNICA DE SEGURANÇA MÁXIMA (GATILHO DE TRAUMA):
+Se, e somente se, você detectar QUALQUER suspeita visual de descontinuidade óssea (fratura) ou luxação (Passos 1 e 2):
+- A chave "sinais_de_alerta" DEVE obrigatoriamente reportar a suspeita de trauma (ex: "Sinal sugestivo de fratura/descontinuidade óssea na região X").
+- A chave "pontos_para_fisioterapeuta_revisar" É PROIBIDA de recomendar testes de Amplitude de Movimento (ADM), força, carga ou preensão. Deve recomendar apenas: "Inspeção sem mobilização e avaliação de perfusão/sensibilidade distal".
+- A chave "recomendacao_segura" DEVE orientar rigorosamente: "Manter proteção articular/imobilização e encaminhar imediatamente para avaliação médica ortopédica".
 
-REGRAS DE INCERTEZA:
-- Diferencie rigorosamente "não visualizado", "sem evidência clara" e "alterado".
-- Ausência de evidência na imagem NÃO significa ausência absoluta da lesão.
-- Se a imagem estiver cortada, desfocada, muito pequena, com sobreposição importante, incidência desconhecida ou insuficiente para avaliar uma estrutura, declare a limitação.
-- Se houver apenas uma incidência, não presuma que outras incidências existem.
-- Se a qualidade não permitir avaliar com segurança um achado relevante, classifique a análise como limitada ou INCONCLUSIVA em vez de adivinhar.
-- Não use o contexto clínico para forçar um achado que não é observável na imagem.
-- Não invente medidas, graus, classificações, sinais radiológicos, incidências ou estruturas não demonstradas.
+REGRAS DE INCERTEZA E LIMITAÇÕES:
+- Não faça diagnóstico médico definitivo. Use: "Sinais sugestivos de...", "Possível alteração em...".
+- Se houver apenas uma incidência ou qualidade ruim, declare isso na chave "limitacoes".
+- Somente descreva achados degenerativos se houver suporte visual real. Não invente achados estatísticos.
 
-REGRAS DE TRAUMA E SEGURANÇA:
-- Qualquer suspeita visual relevante de fratura, luxação, subluxação importante ou outro desalinhamento traumático deve aparecer em sinais_de_alerta como possibilidade a confirmar.
-- NUNCA declare fratura, luxação, ruptura, tumor, infecção, osteomielite ou outra lesão grave como diagnóstico confirmado por uma imagem isolada.
-- Se houver suspeita de trauma, NÃO recomende ADM/ROM, testes de força, testes especiais, carga, exercícios ou mobilização antes de avaliação médica adequada.
-- Para suspeita traumática relevante, a recomendação segura deve priorizar proteção da região, evitar carga/manipulação e avaliação médica/ortopédica, conforme o contexto.
-- Se não houver sinal traumático claro, não crie um alerta apenas por precaução.
+DADOS DA REQUISIÇÃO:
+- Profissional: ${JSON.stringify({ usuario_logado: profile?.nome_completo || '', tipo_usuario: profile?.tipo_usuario || '' })}
+- Paciente: ${JSON.stringify({ nome: patientRecord?.nome_completo || safePatientName || '', id: safePatientId || '' })}
+- Arquivo: ${JSON.stringify({ file_name: safeFileName, exam_type: safeExamType, contem_imagem: Boolean(hasImage) })}
+- Contexto Clínico: ${safeClinicalContext || 'Não informado.'}
+- Texto/Laudo prévio: ${safeExamText || 'Não informado.'}
 
-REGRAS PARA ALTERAÇÕES DEGENERATIVAS:
-- Só descreva osteófitos, esclerose, redução do espaço articular ou outras alterações quando houver suporte visual.
-- Não transforme achados degenerativos em causa automática da dor ou limitação funcional.
-- Relacione achados com função somente como possibilidade e sempre considerando avaliação clínica.
-
-AUTO-REVISÃO OBRIGATÓRIA ANTES DA RESPOSTA:
-1. Volte mentalmente à imagem e revise novamente as corticais ósseas.
-2. Confira se algum achado grave foi afirmado como certeza; se sim, transforme em possibilidade a confirmar.
-3. Confira se cada achado descrito é realmente visível.
-4. Confira se a conclusão respeita a qualidade e as incidências disponíveis.
-5. Se a imagem não permitir uma conclusão segura, use INCONCLUSIVO ou deixe explícita a limitação.
-6. Nunca preencha uma lacuna com suposição.
-
-CLASSIFICAÇÃO DO STATUS:
-- NORMAL: não há alteração relevante claramente observável na imagem dentro das limitações do exame.
-- ALTERACAO_DEGENERATIVA: há alterações degenerativas observáveis, sem sinal traumático relevante identificado.
-- ALERTA_TRAUMA: há possível fratura, luxação, subluxação relevante ou outro achado traumático que exige confirmação profissional.
-- INCONCLUSIVO: qualidade, cobertura, incidência ou sobreposição impedem avaliação confiável.
-
-REGRAS GERAIS:
-- Não faça diagnóstico médico definitivo.
-- Diferencie achados observáveis de hipóteses.
-- Não prescreva tratamento fechado.
-- Seja específico, mas não invente detalhes.
-- Responda somente JSON válido, sem markdown, sem texto antes ou depois do JSON.
-
-DADOS: ${JSON.stringify({ usuario_logado: profile?.nome_completo || '', tipo_usuario: profile?.tipo_usuario || '', paciente: patientRecord?.nome_completo || safePatientName || '', patient_id: safePatientId || '' })}
-ARQUIVO: ${JSON.stringify({ file_name: safeFileName, file_url: safeFileUrl, file_type: safeFileType, exam_type_informado: safeExamType, imagem_enviada_para_analise_visual: Boolean(hasImage) })}
-CONTEXTO CLÍNICO: ${safeClinicalContext || 'Não informado.'}
-TEXTO DO LAUDO: ${safeExamText || 'Não informado.'}
-IMAGEM: ${hasImage ? 'Uma imagem foi enviada. A imagem é a fonte principal para os achados visuais. Analise-a diretamente seguindo o protocolo ABCS.' : 'Nenhuma imagem foi enviada; não faça análise visual e use somente texto/contexto, deixando isso explícito nas limitações.'}
-
-Retorne exatamente este objeto JSON e mantenha estas chaves: {"exam_type":"...","resumo_executivo":"...","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["..."],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["..."],"limitacoes":["..."],"recomendacao_segura":"..."}
-Chaves permitidas: ${JSON.stringify(EXAM_ANALYSIS_KEYS)}`;
+Saída exigida: Retorne EXATAMENTE um objeto JSON válido. Não use formatação markdown (sem \`\`\`json). Não inclua texto fora do JSON.
+Mantenha exatamente estas chaves: {"exam_type":"...","resumo_executivo":"(Resuma a leitura ABCS)","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["(Siga a regra de segurança em caso de trauma)"],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["(Liste riscos de trauma aqui)"],"limitacoes":["..."],"recomendacao_segura":"(Conduta clínica baseada no grau de segurança visual)"}
+Chaves estritas permitidas: ${JSON.stringify(EXAM_ANALYSIS_KEYS)}`;
 
 const extractJsonObject = (content: string) => { const trimmed = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim(); try { return JSON.parse(trimmed); } catch { const start = trimmed.indexOf('{'); const end = trimmed.lastIndexOf('}'); if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1)); throw new Error('A IA retornou um laudo em formato inválido. Tente novamente.'); } };
 
