@@ -256,8 +256,14 @@ export async function recordSubscriptionEmailSent(
       await supabase.from('notificacoes').insert({
         user_id: userId,
         tipo: `email_${eventType}`,
-        titulo: eventType === 'trial_started' ? '🎉 Seu Premium está ativo!' : 'Pagamento da assinatura confirmado',
-        mensagem: `E-mail de confirmação da assinatura (${planName}) enviado para ${email}`,
+        titulo: eventType === 'trial_started'
+          ? '🎉 Seu Premium está ativo!'
+          : eventType === 'cancellation_scheduled'
+            ? 'Cancelamento da renovação confirmado'
+            : 'Pagamento da assinatura confirmado',
+        mensagem: eventType === 'cancellation_scheduled'
+          ? `E-mail de confirmação do cancelamento agendado (${planName}) enviado para ${email}`
+          : `E-mail de confirmação da assinatura (${planName}) enviado para ${email}`,
         referencia_id: dedupKey,
         lida: true,
       });
@@ -377,6 +383,120 @@ export function buildSubscriptionPaidEmailHTML({
       { label: 'ACESSAR MEU FISIOCAREHUB', href: 'https://fisiocarehub.company/dashboard' },
     ],
   });
+}
+
+/**
+ * Gera o e-mail enviado assim que o usuário solicita o cancelamento da renovação.
+ * A assinatura continua ativa até a data final já contratada / prometida.
+ */
+export function buildCancellationScheduledEmailHTML({
+  name,
+  planName,
+  accessEndDate,
+}: {
+  name: string;
+  planName: string;
+  accessEndDate: string;
+}): string {
+  const contentHtml = `
+    <p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:25px;">
+      Recebemos sua solicitação de cancelamento da renovação do plano <strong>${escapeHtml(planName)}</strong>.
+    </p>
+    <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:22px;">
+      Não haverá uma nova renovação automática. Seu plano e todos os recursos correspondentes continuarão disponíveis normalmente até <strong>${escapeHtml(accessEndDate)}</strong>.
+    </p>
+    <p style="margin:0;color:#475569;font-size:14px;line-height:22px;">
+      Se mudar de ideia antes dessa data, você poderá reativar a renovação nas configurações da sua conta.
+    </p>
+  `;
+
+  return generateFisioCareHubEmailHTML({
+    title: 'Cancelamento da renovação confirmado',
+    subtitle: 'Sua solicitação foi registrada com sucesso.',
+    preheader: `Seu plano continuará ativo até ${accessEndDate}.`,
+    greetingName: name,
+    variant: 'payment',
+    contentHtml,
+    details: [
+      { label: 'Plano', value: planName },
+      { label: 'Acesso disponível até', value: accessEndDate },
+      { label: 'Renovação automática', value: 'Cancelada' },
+    ],
+    ctas: [
+      { label: 'GERENCIAR MINHA ASSINATURA', href: 'https://fisiocarehub.company/dashboard' },
+    ],
+  });
+}
+
+/**
+ * Envia a confirmação do cancelamento agendado sem nunca interromper o fluxo
+ * principal da assinatura. A deduplicação impede reenvios para a mesma assinatura.
+ */
+export async function sendCancellationScheduledEmailSafe({
+  supabase,
+  userId,
+  email,
+  userName,
+  planKey,
+  stripeSubscriptionId,
+  accessEnd,
+}: {
+  supabase: any;
+  userId?: string;
+  email?: string | null;
+  userName?: string | null;
+  planKey?: string | null;
+  stripeSubscriptionId?: string | null;
+  accessEnd?: string | number | Date | null;
+}): Promise<{ success: boolean; skipped?: boolean; reason?: string; error?: string }> {
+  try {
+    const targetEmail = (email || '').trim();
+    if (!targetEmail) {
+      console.warn('[SubscriptionEmail] Confirmação de cancelamento não enviada: destinatário vazio.');
+      return { success: false, error: 'Email não informado' };
+    }
+
+    const subId = stripeSubscriptionId || userId || targetEmail;
+    const dedupKey = `cancellation_scheduled_${subId}`;
+    const alreadySent = await isSubscriptionEmailAlreadySent(supabase, dedupKey, userId);
+    if (alreadySent) return { success: true, skipped: true, reason: 'already_sent' };
+
+    const planMeta = resolvePlanMetadata(planKey);
+    const endDateFormatted = formatDateBrSafe(accessEnd);
+    if (!endDateFormatted) {
+      console.warn('[SubscriptionEmail] Confirmação de cancelamento não enviada: data final do acesso indisponível.');
+      return { success: true, skipped: true, reason: 'missing_access_end' };
+    }
+
+    const html = buildCancellationScheduledEmailHTML({
+      name: userName || 'Profissional',
+      planName: planMeta.name,
+      accessEndDate: endDateFormatted,
+    });
+
+    const sendRes = await sendEmailViaResendSafely({
+      to: targetEmail,
+      subject: 'Cancelamento da renovação confirmado - FisioCareHub',
+      html,
+    });
+
+    if (sendRes.success) {
+      await recordSubscriptionEmailSent(supabase, {
+        dedupKey,
+        userId,
+        eventType: 'cancellation_scheduled',
+        email: targetEmail,
+        planName: planMeta.name,
+      });
+      return { success: true };
+    }
+
+    console.error('[SubscriptionEmail] Falha ao enviar confirmação de cancelamento via Resend:', sendRes.error);
+    return { success: true, skipped: false, error: sendRes.error };
+  } catch (err: any) {
+    console.error('[SubscriptionEmail] Erro ao preparar confirmação de cancelamento:', err);
+    return { success: true, error: err.message };
+  }
 }
 
 /**
