@@ -216,8 +216,17 @@ export default function Subscription() {
                   Seu teste gratuito termina em <span className="underline decoration-sky-300 underline-offset-4">{subDetails.trialDaysRemaining} {subDetails.trialDaysRemaining === 1 ? 'dia' : 'dias'}</span>
                 </h3>
                 <p className="text-sky-100 text-sm font-medium">
-                  Primeira cobrança de {subDetails.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'} apenas em{' '}
-                  <strong>{subDetails.trialEnd ? new Date(subDetails.trialEnd).toLocaleDateString('pt-BR') : '60 dias'}</strong>.
+                  {subDetails.cancelAtPeriodEnd ? (
+                    <>
+                      Seu acesso permanece ativo até{' '}
+                      <strong>{subDetails.trialEnd ? new Date(subDetails.trialEnd).toLocaleDateString('pt-BR') : 'o fim do período de teste'}</strong>. Você não será cobrado ao final do período de teste.
+                    </>
+                  ) : (
+                    <>
+                      Primeira cobrança de {subDetails.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'} apenas em{' '}
+                      <strong>{subDetails.trialEnd ? new Date(subDetails.trialEnd).toLocaleDateString('pt-BR') : '60 dias'}</strong>.
+                    </>
+                  )}
                 </p>
               </div>
 
