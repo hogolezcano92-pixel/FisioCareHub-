@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { sendTrialStartedConfirmationEmailSafe } from '../services/subscriptionEmailHelper.js';
+import { sendTrialStartedConfirmationEmailSafe, sendCancellationScheduledEmailSafe } from '../services/subscriptionEmailHelper.js';
 
 type PlanKey = 'basic_monthly' | 'pro_monthly' | 'pro_semester' | 'pro_yearly';
 
@@ -707,6 +707,20 @@ async function cancelSubscription(req: VercelRequest, res: VercelResponse, body:
   // cancel_at_period_end mantém a assinatura active/trialing até o vencimento.
   // Não bloqueamos o usuário antes da data final prometida na interface.
   const synced = await syncStripeSubscriptionAccess(userId, subscription, fallbackPlanKey, customerId);
+
+  // Confirma ao usuário que a renovação foi cancelada, sem interferir no
+  // cancelamento caso o provedor de e-mail esteja indisponível.
+  const accessEndUnix = subscription.trial_end || getPeriodEndUnix(subscription);
+  await sendCancellationScheduledEmailSafe({
+    supabase,
+    userId,
+    email: profile?.email,
+    userName: profile?.nome_completo || profile?.nome,
+    planKey: fallbackPlanKey,
+    stripeSubscriptionId: subscription.id,
+    accessEnd: accessEndUnix ? new Date(accessEndUnix * 1000) : synced.nextBillingDate,
+  });
+
   return res.status(200).json({
     success: true,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
@@ -763,6 +777,7 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
   // antiga de sincronização com o Supabase.
   const customerId = profile?.stripe_customer_id || sub?.stripe_customer_id || null;
   const stripeSubscriptionId = profile?.stripe_subscription_id || sub?.stripe_subscription_id || null;
+  let cancelAtPeriodEnd = false;
   if (customerId || stripeSubscriptionId) {
     try {
       const stripe = getStripe();
@@ -778,6 +793,7 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
       }
 
       if (stripeSub && ['trialing', 'active'].includes(stripeSub.status)) {
+        cancelAtPeriodEnd = Boolean(stripeSub.cancel_at_period_end);
         const fallbackPlanKey: PlanKey = isPlanKey(sub?.plan_key)
           ? sub.plan_key
           : (String(profile?.plan_type || profile?.plano || '').toLowerCase() === 'basic' ? 'basic_monthly' : 'pro_monthly');
@@ -802,7 +818,10 @@ async function subscriptionDetails(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  return res.status(200).json(buildSubscriptionDetails(profile, sub));
+  return res.status(200).json({
+    ...buildSubscriptionDetails(profile, sub),
+    cancelAtPeriodEnd,
+  });
 }
 
 export async function handleStripeSubscriptionAction(action: string, req: VercelRequest, res: VercelResponse) {
