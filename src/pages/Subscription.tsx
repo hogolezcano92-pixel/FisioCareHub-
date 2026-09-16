@@ -249,11 +249,13 @@ export default function Subscription() {
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-sky-50 text-sky-700 border-sky-200"
                     )}>
-                      {isTrialActive ? `Trial (${subDetails?.trialDaysRemaining}d)` : 'Assinatura Ativa'}
+                      {subDetails?.cancelAtPeriodEnd ? 'Cancelamento agendado' : isTrialActive ? `Trial (${subDetails?.trialDaysRemaining}d)` : 'Assinatura Ativa'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    {isTrialActive ? 'Período de avaliação de 60 dias sem cobrança' : 'Acesso ilimitado ativado'}
+                    {subDetails?.cancelAtPeriodEnd
+                      ? `Acesso mantido até ${subDetails?.nextBillingDate ? new Date(subDetails.nextBillingDate).toLocaleDateString('pt-BR') : 'o fim do período atual'}`
+                      : isTrialActive ? 'Período de avaliação de 60 dias sem cobrança' : 'Acesso ilimitado ativado'}
                   </p>
                 </div>
               </div>
@@ -271,24 +273,36 @@ export default function Subscription() {
                 >
                   <RefreshCw size={14} /> Trocar Plano
                 </button>
-                <button
-                  onClick={() => setShowCancelModal(true)}
-                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-all border border-rose-200"
-                >
-                  Cancelar Assinatura
-                </button>
+                {subDetails?.cancelAtPeriodEnd ? (
+                  <button
+                    onClick={handleReactivate}
+                    disabled={loading}
+                    className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition-all border border-emerald-200 disabled:opacity-60"
+                  >
+                    Reativar Assinatura
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-all border border-rose-200"
+                  >
+                    Cancelar Assinatura
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Sub-grid Detalhes */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1">Próxima Cobrança</span>
+                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-1">{subDetails?.cancelAtPeriodEnd ? 'Acesso até' : 'Próxima Cobrança'}</span>
                 <span className="text-base font-extrabold text-slate-900">
                   {subDetails?.nextBillingDate ? new Date(subDetails.nextBillingDate).toLocaleDateString('pt-BR') : '60 dias'}
                 </span>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  Valor: {subDetails?.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'}
+                  {subDetails?.cancelAtPeriodEnd
+                    ? 'Renovação automática cancelada — não haverá nova cobrança.'
+                    : <>Valor: {subDetails?.amount ? subDetails.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 49,99'}</>}
                 </p>
               </div>
 
