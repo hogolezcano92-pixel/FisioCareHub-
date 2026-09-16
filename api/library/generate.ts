@@ -56,41 +56,81 @@ async function completeEvaluationWithAi(req: VercelRequest, res: VercelResponse)
   const { supabaseAdmin, groq, authUserId: userId } = await getServerClients(accessToken); const { data: profile } = await supabaseAdmin.from('perfis').select('id, tipo_usuario, email').eq('id', userId).maybeSingle(); const isAdmin = profile?.tipo_usuario === 'admin' || profile?.email?.toLowerCase() === 'hogolezcano92@gmail.com';
   const { data: patientRecord, error: patientError } = await supabaseAdmin.from('pacientes').select('id, nome_completo, data_nascimento, telefone, fisioterapeuta_id').eq('id', safePacienteId).maybeSingle(); if (patientError) console.warn('[Evaluation AI API] Não foi possível validar paciente no backend:', patientError); if (patientRecord && !isAdmin && patientRecord.fisioterapeuta_id !== userId) return res.status(403).json({ error: 'Você não tem permissão para gerar ficha deste paciente.' });
   const safeNotes = sanitizeText(notes, 6000); const safeCurrentForm = FIELD_KEYS.reduce((acc: any, key) => { const value = currentForm?.[key]; acc[key] = key === 'escala_dor' ? Number(value || 0) : sanitizeText(value, 1200); return acc; }, {});
-  const prompt = `Você é um assistente clínico para fisioterapeutas no Brasil. Organize uma ficha de avaliação fisioterapêutica a partir de texto livre e dados já preenchidos. Não invente achados; não dê diagnóstico médico fechado; diagnostico_fisio deve ser hipótese funcional para revisão; conduta deve ser sugestão inicial segura e revisável. Responda somente JSON válido.
-PACIENTE: ${JSON.stringify({ nome_completo: patientRecord?.nome_completo || patient?.nome_completo || '', data_nascimento: patientRecord?.data_nascimento || patient?.data_nascimento || '', telefone: patientRecord?.telefone || patient?.telefone || '' })}
-ANOTAÇÕES: ${safeNotes || 'Sem anotações livres.'}
-CAMPOS: ${JSON.stringify(safeCurrentForm)}
-Retorne exatamente: ${JSON.stringify(FIELD_KEYS)}`;
+  const prompt = `Você é um assistente clínico para fisioterapeutas no Brasil. Organize uma ficha de avaliação fisioterapêutica a partir de texto livre e dados já preenchidos. Não invente achados; não dê diagnóstico médico fechado; diagnostico_fisio deve ser hipótese funcional para revisão; conduta deve ser sugestão inicial segura e revisável. Responda somente JSON válido.\nPACIENTE: ${JSON.stringify({ nome_completo: patientRecord?.nome_completo || patient?.nome_completo || '', data_nascimento: patientRecord?.data_nascimento || patient?.data_nascimento || '', telefone: patientRecord?.telefone || patient?.telefone || '' })}\nANOTAÇÕES: ${safeNotes || 'Sem anotações livres.'}\nCAMPOS: ${JSON.stringify(safeCurrentForm)}\nRetorne exatamente: ${JSON.stringify(FIELD_KEYS)}`;
   const completion = await withTimeout(groq.chat.completions.create({ model: TEXT_MODEL, temperature: 0.2, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: 'Você retorna somente JSON válido para preencher fichas fisioterapêuticas. Seja cauteloso e não invente dados.' }, { role: 'user', content: prompt }] }), 35_000);
   const content = completion.choices[0]?.message?.content; if (!content) return res.status(502).json({ error: 'A IA retornou uma resposta vazia.' }); const fields = normalizeAiFields(JSON.parse(content));
   return res.status(200).json({ success: true, fields, warning: patientRecord ? 'Conteúdo gerado por IA. Revise todos os campos antes de salvar no prontuário.' : 'Conteúdo gerado por IA sem validar dados do paciente no backend. Revise antes de salvar.' });
 }
 
-const buildExamPrompt = ({ profile, patientRecord, safePatientId, safePatientName, safeFileName, safeFileUrl, safeFileType, safeExamType, safeClinicalContext, safeExamText, hasImage }: any) => `Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil. Sua função é analisar visualmente exames quando uma imagem for enviada, organizar os achados observáveis e gerar um pré-laudo/relatório de apoio para revisão profissional.
+const buildExamPrompt = ({ profile, patientRecord, safePatientId, safePatientName, safeFileName, safeFileUrl, safeFileType, safeExamType, safeClinicalContext, safeExamText, hasImage }: any) => `Você é uma IA de apoio clínico do FisioCareHub para fisioterapeutas e pacientes no Brasil. Sua função é analisar exames, especialmente imagens musculoesqueléticas, para organizar achados observáveis e gerar um pré-laudo de apoio à revisão profissional. Você NÃO substitui radiologista, ortopedista ou fisioterapeuta e NÃO pode confirmar diagnóstico médico apenas pela imagem.
 
-REGRAS OBRIGATÓRIAS DE SEGURANÇA:
+PROTOCOLO OBRIGATÓRIO PARA IMAGENS MUSCULOESQUELÉTICAS — ABCS:
+A — ALINHAMENTO: identifique a região anatômica e a incidência quando realmente puder. Avalie eixo ósseo, congruência articular, subluxação ou luxação. Não invente incidência ou estrutura que não esteja visível.
+B — BONES/OSSOS: faça uma varredura sistemática de TODAS as estruturas ósseas visíveis, cortical por cortical e ponta a ponta. Procure descontinuidade cortical, degrau, interrupção, angulação, impacção, fragmento ou outro sinal de possível fratura. Depois faça uma SEGUNDA VARREDURA independente procurando novamente fraturas, inclusive em regiões periféricas e sobrepostas. Uma sombra, sobreposição anatômica ou artefato não deve ser chamado de fratura sem evidência suficiente.
+C — CARTILAGEM/ESPAÇO ARTICULAR: avalie espaço articular, redução assimétrica quando realmente visível, esclerose subcondral, osteófitos e outras alterações degenerativas observáveis. Não transforme uma pequena irregularidade em diagnóstico.
+S — PARTES MOLES: descreva somente aumento de volume, derrame ou alteração de partes moles que sejam realmente perceptíveis na imagem. Lembre que radiografia tem limitação para tecidos moles.
+
+ORDEM DE PRIORIDADE:
+1. Segurança/trauma: primeiro procure desalinhamento importante e possível descontinuidade óssea.
+2. Qualidade da imagem: avalie se a imagem está completa, focada, sem excesso de artefatos e se permite interpretação adequada.
+3. ABCS completo.
+4. Somente depois descreva alterações degenerativas ou outros achados.
+
+REGRAS DE INCERTEZA:
+- Diferencie rigorosamente "não visualizado", "sem evidência clara" e "alterado".
+- Ausência de evidência na imagem NÃO significa ausência absoluta da lesão.
+- Se a imagem estiver cortada, desfocada, muito pequena, com sobreposição importante, incidência desconhecida ou insuficiente para avaliar uma estrutura, declare a limitação.
+- Se houver apenas uma incidência, não presuma que outras incidências existem.
+- Se a qualidade não permitir avaliar com segurança um achado relevante, classifique a análise como limitada ou INCONCLUSIVA em vez de adivinhar.
+- Não use o contexto clínico para forçar um achado que não é observável na imagem.
+- Não invente medidas, graus, classificações, sinais radiológicos, incidências ou estruturas não demonstradas.
+
+REGRAS DE TRAUMA E SEGURANÇA:
+- Qualquer suspeita visual relevante de fratura, luxação, subluxação importante ou outro desalinhamento traumático deve aparecer em sinais_de_alerta como possibilidade a confirmar.
+- NUNCA declare fratura, luxação, ruptura, tumor, infecção, osteomielite ou outra lesão grave como diagnóstico confirmado por uma imagem isolada.
+- Se houver suspeita de trauma, NÃO recomende ADM/ROM, testes de força, testes especiais, carga, exercícios ou mobilização antes de avaliação médica adequada.
+- Para suspeita traumática relevante, a recomendação segura deve priorizar proteção da região, evitar carga/manipulação e avaliação médica/ortopédica, conforme o contexto.
+- Se não houver sinal traumático claro, não crie um alerta apenas por precaução.
+
+REGRAS PARA ALTERAÇÕES DEGENERATIVAS:
+- Só descreva osteófitos, esclerose, redução do espaço articular ou outras alterações quando houver suporte visual.
+- Não transforme achados degenerativos em causa automática da dor ou limitação funcional.
+- Relacione achados com função somente como possibilidade e sempre considerando avaliação clínica.
+
+AUTO-REVISÃO OBRIGATÓRIA ANTES DA RESPOSTA:
+1. Volte mentalmente à imagem e revise novamente as corticais ósseas.
+2. Confira se algum achado grave foi afirmado como certeza; se sim, transforme em possibilidade a confirmar.
+3. Confira se cada achado descrito é realmente visível.
+4. Confira se a conclusão respeita a qualidade e as incidências disponíveis.
+5. Se a imagem não permitir uma conclusão segura, use INCONCLUSIVO ou deixe explícita a limitação.
+6. Nunca preencha uma lacuna com suposição.
+
+CLASSIFICAÇÃO DO STATUS:
+- NORMAL: não há alteração relevante claramente observável na imagem dentro das limitações do exame.
+- ALTERACAO_DEGENERATIVA: há alterações degenerativas observáveis, sem sinal traumático relevante identificado.
+- ALERTA_TRAUMA: há possível fratura, luxação, subluxação relevante ou outro achado traumático que exige confirmação profissional.
+- INCONCLUSIVO: qualidade, cobertura, incidência ou sobreposição impedem avaliação confiável.
+
+REGRAS GERAIS:
 - Não faça diagnóstico médico definitivo.
-- Nunca afirme fratura, luxação, ruptura, tumor, infecção, osteomielite, deslocamento ou lesão grave como diagnóstico confirmado.
-- Se houver suspeita visual de fratura/luxação/ruptura/deslocamento, use "possível achado a confirmar" e "não é possível confirmar apenas por esta imagem".
-- Em imagem única, baixa resolução, imagem cortada ou sem AP/lateral completas, classifique a análise como limitada.
-- Para raio-X musculoesquelético, descreva alinhamento, espaço articular, osteófitos/alterações degenerativas, sinais grosseiros de fratura/luxação e limitações.
-- Diferencie achados observáveis de hipóteses a confirmar.
-- Não prescreva tratamento fechado e exija revisão profissional.
-- Responda apenas JSON válido.
+- Diferencie achados observáveis de hipóteses.
+- Não prescreva tratamento fechado.
+- Seja específico, mas não invente detalhes.
+- Responda somente JSON válido, sem markdown, sem texto antes ou depois do JSON.
 
-AUTO-REVISÃO: não afirme achado grave como certeza; mantenha resumo cauteloso; mencione limitações quando aplicável; exija revisão profissional.
 DADOS: ${JSON.stringify({ usuario_logado: profile?.nome_completo || '', tipo_usuario: profile?.tipo_usuario || '', paciente: patientRecord?.nome_completo || safePatientName || '', patient_id: safePatientId || '' })}
 ARQUIVO: ${JSON.stringify({ file_name: safeFileName, file_url: safeFileUrl, file_type: safeFileType, exam_type_informado: safeExamType, imagem_enviada_para_analise_visual: Boolean(hasImage) })}
-CONTEXTO: ${safeClinicalContext || 'Não informado.'}
+CONTEXTO CLÍNICO: ${safeClinicalContext || 'Não informado.'}
 TEXTO DO LAUDO: ${safeExamText || 'Não informado.'}
-IMAGEM: ${hasImage ? 'Uma imagem foi enviada. Analise visualmente com cautela e descreva apenas achados observáveis.' : 'Nenhuma imagem foi enviada; use somente texto/contexto.'}
-Retorne exatamente: {"exam_type":"...","resumo_executivo":"...","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["..."],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["..."],"limitacoes":["..."],"recomendacao_segura":"..."}
-Chaves: ${JSON.stringify(EXAM_ANALYSIS_KEYS)}`;
+IMAGEM: ${hasImage ? 'Uma imagem foi enviada. A imagem é a fonte principal para os achados visuais. Analise-a diretamente seguindo o protocolo ABCS.' : 'Nenhuma imagem foi enviada; não faça análise visual e use somente texto/contexto, deixando isso explícito nas limitações.'}
+
+Retorne exatamente este objeto JSON e mantenha estas chaves: {"exam_type":"...","resumo_executivo":"...","principais_achados":["..."],"explicacao_para_paciente":"...","pontos_para_fisioterapeuta_revisar":["..."],"possiveis_relacoes_funcionais":["..."],"sinais_de_alerta":["..."],"limitacoes":["..."],"recomendacao_segura":"..."}
+Chaves permitidas: ${JSON.stringify(EXAM_ANALYSIS_KEYS)}`;
 
 const extractJsonObject = (content: string) => { const trimmed = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim(); try { return JSON.parse(trimmed); } catch { const start = trimmed.indexOf('{'); const end = trimmed.lastIndexOf('}'); if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1)); throw new Error('A IA retornou um laudo em formato inválido. Tente novamente.'); } };
 
 const createExamCompletion = async ({ groq, prompt, imageDataUrl }: { groq: Groq; prompt: string; imageDataUrl: string }) => {
-  const systemMessage = { role: 'system', content: 'Você retorna somente JSON válido. Você é uma IA de apoio para exames, sempre cautelosa. Nunca confirma diagnóstico grave por imagem isolada. Para fratura/luxação/ruptura/deslocamento/tumor/infecção, use linguagem de possibilidade a confirmar e revisão profissional obrigatória.' };
+  const systemMessage = { role: 'system', content: 'Você é uma IA de apoio à análise de exames. Retorne somente JSON válido. Para imagens musculoesqueléticas, siga rigorosamente o protocolo ABCS fornecido pelo usuário. Faça dupla revisão visual das corticais ósseas antes de concluir. Não invente achados, incidências ou medidas. Nunca confirme diagnóstico grave por imagem isolada. Suspeitas de fratura, luxação ou outro trauma devem ser descritas como possibilidade a confirmar e gerar revisão profissional obrigatória. Se a imagem for insuficiente, declare INCONCLUSIVO ou análise limitada.' };
   if (!imageDataUrl) return await withTimeout(groq.chat.completions.create({ model: TEXT_MODEL, temperature: 0.05, max_completion_tokens: MAX_EXAM_COMPLETION_TOKENS, response_format: { type: 'json_object' }, messages: [systemMessage, { role: 'user', content: prompt }] as any }), AI_TIMEOUT_MS);
   let lastError: any = null;
   for (const model of VISION_MODELS) {
