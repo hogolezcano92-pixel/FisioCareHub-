@@ -114,6 +114,7 @@ export interface SubscriptionDetails {
   cardExpYear: number | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  cancelAtPeriodEnd: boolean;
 }
 
 export const calculateTrialDaysRemaining = (trialEndDate: string | Date | null | undefined): number => {
@@ -478,6 +479,7 @@ export const fetchSubscriptionDetails = async (userId: string): Promise<Subscrip
       cardExpYear: sub?.card_exp_year || profile?.card_exp_year || null,
       stripeCustomerId: sub?.stripe_customer_id || profile?.stripe_customer_id || null,
       stripeSubscriptionId: sub?.stripe_subscription_id || profile?.stripe_subscription_id || null,
+      cancelAtPeriodEnd: Boolean(sub?.cancel_at_period_end || profile?.cancel_at_period_end),
     };
   } catch (err) {
     console.error('[SubscriptionService] Direct Supabase fetch failed:', err);
