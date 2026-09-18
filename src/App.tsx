@@ -114,6 +114,7 @@ const ClinicalUpdateDetail = lazy(() => import('./pages/ClinicalUpdateDetail'));
 const ClinicalUpdates = lazy(() => import('./pages/ClinicalUpdates'));
 const ExamAnalysis = lazy(() => import('./pages/ExamAnalysis'));
 const ClinicalTestsHub = lazy(() => import('./pages/ClinicalTestsHub'));
+const FisioQuestions = lazy(() => import('./pages/FisioQuestions'));
 const VerifySignature = lazy(() => import('./pages/VerifySignature'));
 
 const PageLoader = () => {
@@ -843,6 +844,7 @@ function AppContent() {
                   <Route path="/physio/evaluation" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
                   <Route path="/physio/evaluation/:id" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><ProGuard requiredPlan="pro"><PhysioEvaluationForm /></ProGuard></ProtectedRoute>} />
                   <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                  <Route path="/estudos/questoes" element={<ProtectedRoute allowedRoles={["fisioterapeuta"]}><FisioQuestions /></ProtectedRoute>} />
                   <Route path="/subscription" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/dashboard/assinatura" element={<ProtectedRoute allowedRoles={['fisioterapeuta']}><Subscription /></ProtectedRoute>} />
                   <Route path="/documents" element={<ProtectedRoute><ProGuard requiredPlan="free"><Documents /></ProGuard></ProtectedRoute>} />
