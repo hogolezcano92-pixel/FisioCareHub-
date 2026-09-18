@@ -113,6 +113,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           ] : [])
         ]
       },
+      ...(isPhysio && isApproved ? [
+        {
+          title: 'Estudos',
+          items: [
+            { name: 'Questões de Fisioterapia', path: '/estudos/questoes', icon: BookOpen },
+          ]
+        }
+      ] : []),
       {
         title: 'Negócios',
         items: [
