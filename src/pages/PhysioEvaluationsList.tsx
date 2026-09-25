@@ -70,7 +70,7 @@ export default function PhysioEvaluationsList() {
           </div>
           
           <button 
-            onClick={() => navigate('/patients')}
+            onClick={() => navigate('/physio/evaluation')}
             className="flex items-center gap-2 px-8 py-4 bg-sky-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-sky-600 transition-all shadow-xl shadow-sky-900/20"
           >
             <Plus size={20} /> Nova Avaliação
@@ -100,7 +100,7 @@ export default function PhysioEvaluationsList() {
             <h3 className="text-2xl font-black text-white">Nenhuma ficha encontrada</h3>
             <p className="text-slate-500 mt-2 font-medium">Você ainda não realizou avaliações ou a busca não retornou resultados.</p>
             <button 
-              onClick={() => navigate('/patients')}
+              onClick={() => navigate('/physio/evaluation')}
               className="mt-8 px-8 py-3 bg-white/5 text-sky-400 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
             >
               Ir para Meus Pacientes
