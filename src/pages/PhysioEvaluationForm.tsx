@@ -111,13 +111,13 @@ function Section({ title, children, icon: Icon = ClipboardList }: any) {
 function Field({ label, value, onChange, placeholder = '', type = 'text', min, max }: any) {
   return (
     <label className="block space-y-1.5 flex-1">
-      <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">{label}</span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-400">{label}</span>
       {type === 'textarea' ? (
         <textarea value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full min-h-[96px] rounded-2xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-950 dark:text-white placeholder:text-slate-400 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 resize-y" />
+          className="w-full min-h-[96px] rounded-2xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 resize-y" />
       ) : (
         <input type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full h-11 box-border rounded-2xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 [color-scheme:light] dark:[color-scheme:dark]" />
+          className="w-full h-11 box-border rounded-2xl border border-slate-300 bg-white dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 [color-scheme:light] dark:[color-scheme:dark]" />
       )}
     </label>
   );
@@ -149,7 +149,7 @@ export default function PhysioEvaluationWorkspace() {
   const [step, setStep] = useState(id ? 2 : 0);
 
   // Classe utilitária extraída para campos de tabelas internas (Testes e CIF)
-  const inputCompact = "w-full h-11 rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 [color-scheme:light] dark:[color-scheme:dark]";
+  const inputCompact = "w-full h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 [color-scheme:light] dark:[color-scheme:dark]";
 
   useEffect(() => {
     if (!user) return;
@@ -393,7 +393,7 @@ export default function PhysioEvaluationWorkspace() {
               </div>
               <p className="text-xs text-slate-700 dark:text-slate-400">Você pode vincular um paciente já cadastrado ou criar um novo paciente agora.</p>
               {showCreatePatient && <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 shadow-sm dark:border-sky-500/20 dark:bg-sky-500/5 dark:shadow-none p-5 space-y-4">
-                <div className="flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">Cadastrar paciente</h3><p className="text-xs text-slate-700 dark:text-slate-400 mt-1">O paciente será criado no seu cadastro e vinculado automaticamente a esta avaliação.</p></div><button type="button" onClick={()=>setShowCreatePatient(false)} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Cancelar</button></div>
+                <div className="flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">Cadastrar paciente</h3><p className="text-xs text-slate-700 dark:text-slate-400 mt-1">O paciente será criado no seu cadastro e vinculado automaticamente a esta avaliação.</p></div><button type="button" onClick={()=>setShowCreatePatient(false)} className="text-xs font-bold text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Cancelar</button></div>
                 {/* Removido o min-w-0 e md:max-w-[220px] para o grid equalizar perfeitamente */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <Field label="Nome completo *" value={newPatient.nome_completo} onChange={(v:string)=>setNewPatient(p=>({...p,nome_completo:v}))} placeholder="Nome completo"/>
@@ -467,18 +467,18 @@ export default function PhysioEvaluationWorkspace() {
         {type && step === 3 && (
           <Section title="Testes e escalas" icon={Activity}>
             <div className="flex flex-wrap gap-2 mb-5">
-              {specificLabels[type].slice(0,5).map(x=><button key={x} onClick={()=>{addTest(); setTests(prev=>[...prev.slice(0,-1),{name:x,result:'',unit:'',interpretation:''}])}} className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 hover:bg-slate-100 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-500/40">+ {x}</button>)}
+              {specificLabels[type].slice(0,5).map(x=><button key={x} onClick={()=>{addTest(); setTests(prev=>[...prev.slice(0,-1),{name:x,result:'',unit:'',interpretation:''}])}} className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 hover:bg-slate-100 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-500/40">+ {x}</button>)}
               <button onClick={addTest} className="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-600 hover:bg-sky-100 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-300">+ Teste personalizado</button>
             </div>
             <div className="space-y-3">
-              {tests.map((t,i)=><div key={i} className="grid md:grid-cols-[1.3fr_1fr_0.6fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/5">
+              {tests.map((t,i)=><div key={i} className="grid md:grid-cols-[1.3fr_1fr_0.6fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-slate-50 dark:bg-white/5 dark:border-white/5">
                 <input value={t.name} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder="Teste / escala" className={inputCompact}/>
                 <input value={t.result} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,result:e.target.value}:x))} placeholder="Resultado" className={inputCompact}/>
                 <input value={t.unit} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,unit:e.target.value}:x))} placeholder="Unid." className={inputCompact}/>
                 <input value={t.interpretation} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,interpretation:e.target.value}:x))} placeholder="Interpretação clínica" className={inputCompact}/>
                 <button onClick={()=>setTests(a=>a.filter((_,j)=>j!==i))} className="p-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"><Trash2 size={16}/></button>
               </div>)}
-              {!tests.length && <div className="py-12 text-center text-slate-500 dark:text-slate-500 text-sm">Nenhum teste registrado ainda.</div>}
+              {!tests.length && <div className="py-12 text-center text-slate-700 dark:text-slate-400 text-sm">Nenhum teste registrado ainda.</div>}
             </div>
             <div className="flex justify-end mt-6"><button onClick={()=>setStep(4)} className="px-6 py-3 rounded-2xl bg-sky-500 text-white hover:bg-sky-600 font-black">Próximo: CIF</button></div>
           </Section>
@@ -487,9 +487,9 @@ export default function PhysioEvaluationWorkspace() {
         {type && step === 4 && (
           <Section title="CIF — Classificação Internacional de Funcionalidade" icon={ShieldCheck}>
             <p className="text-sm text-slate-700 dark:text-slate-400 mb-5">Registre o domínio, qualificador e contexto funcional observado. Os códigos abaixo são referências da CIF; o profissional deve confirmar a pertinência clínica antes de registrar.</p>
-            <div className="flex flex-wrap gap-2 mb-5">{CIF_SUGGESTIONS.map(s=><button key={s.code} onClick={()=>addCif(s)} className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 hover:bg-slate-100 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-500/40">{s.code} · {s.description}</button>)}<button onClick={()=>addCif()} className="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-600 hover:bg-sky-100 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-300">+ Item CIF</button></div>
+            <div className="flex flex-wrap gap-2 mb-5">{CIF_SUGGESTIONS.map(s=><button key={s.code} onClick={()=>addCif(s)} className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 hover:bg-slate-100 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-500/40">{s.code} · {s.description}</button>)}<button onClick={()=>addCif()} className="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-600 hover:bg-sky-100 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-300">+ Item CIF</button></div>
             <div className="space-y-4">
-              {cif.map((x,i)=><div key={i} className="grid md:grid-cols-[0.55fr_1.6fr_1fr_0.55fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/5">
+              {cif.map((x,i)=><div key={i} className="grid md:grid-cols-[0.55fr_1.6fr_1fr_0.55fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-slate-50 dark:bg-white/5 dark:border-white/5">
                 <input value={x.code} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,code:e.target.value}:v))} placeholder="Código" className={inputCompact}/>
                 <input value={x.description} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,description:e.target.value}:v))} placeholder="Descrição" className={inputCompact}/>
                 <select value={x.category} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,category:e.target.value}:v))} className={inputCompact}><option value="funcoes">Funções</option><option value="estruturas">Estruturas</option><option value="atividade_participacao">Atividade/participação</option><option value="ambiental">Ambiental</option></select>
@@ -497,7 +497,7 @@ export default function PhysioEvaluationWorkspace() {
                 <input value={x.observation} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,observation:e.target.value}:v))} placeholder="Observação / contexto" className={inputCompact}/>
                 <button onClick={()=>setCif(a=>a.filter((_,j)=>j!==i))} className="p-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"><Trash2 size={16}/></button>
               </div>)}
-              {!cif.length && <div className="py-12 text-center text-slate-500 dark:text-slate-500 text-sm">Adicione os domínios funcionais relevantes para este paciente.</div>}
+              {!cif.length && <div className="py-12 text-center text-slate-700 dark:text-slate-400 text-sm">Adicione os domínios funcionais relevantes para este paciente.</div>}
             </div>
             <div className="flex justify-end mt-6"><button onClick={()=>setStep(5)} className="px-6 py-3 rounded-2xl bg-sky-500 text-white hover:bg-sky-600 font-black">Próximo: plano terapêutico</button></div>
           </Section>
@@ -519,7 +519,7 @@ export default function PhysioEvaluationWorkspace() {
               <div><div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black"><CheckCircle2 size={20}/> Ficha pronta para finalização</div><p className="text-sm text-slate-700 dark:text-slate-400 mt-1">Salve a avaliação para vinculá-la ao histórico do paciente e gerar o PDF.</p></div>
               <div className="flex gap-2"><button onClick={save} disabled={saving || !!integrityHash} className="px-6 py-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 font-black flex items-center gap-2 disabled:opacity-50"><Save size={17}/>{saving?'Salvando...':'Salvar e finalizar'}</button>{savedId&&<button onClick={generatePdf} className="px-6 py-3 rounded-2xl bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-white/10 dark:text-white font-black flex items-center gap-2"><FileDown size={17}/> Gerar PDF</button>}</div>
             </div>
-            {integrityHash && <div className="text-[11px] text-slate-500 dark:text-slate-500 flex items-center gap-2"><ShieldCheck size={14}/> Registro protegido por integridade documental.</div>}
+            {integrityHash && <div className="text-[11px] text-slate-700 dark:text-slate-400 flex items-center gap-2"><ShieldCheck size={14}/> Registro protegido por integridade documental.</div>}
           </div>
         )}
       </div>
