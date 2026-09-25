@@ -310,7 +310,7 @@ export default function PhysioEvaluationWorkspace() {
         ['DOR', [['Localização',form.localizacao_dor],['Início/duração',form.inicio_dor],['Tipo',form.tipo_dor],['Agravantes',form.fatores_agravantes],['Alívio',form.fatores_alivio],['Escala',String(form.escala_dor ?? 0)+'/10']]],
         ['EXAME FÍSICO', [['Postura',form.postura],['Inspeção',form.inspecao],['Palpação',form.palpacao],['ADM',form.amplitude_movimento],['Força',form.forca_muscular],['Sensibilidade',form.sensibilidade],['Tônus',form.tonus],['Coordenação',form.coordenacao],['Equilíbrio',form.equilibrio],['Marcha',form.marcha]]],
         ['RACIOCÍNIO CLÍNICO', [['Diagnóstico fisioterapêutico',form.diagnostico_fisio],['Objetivos',form.objetivos_terapeuticos],['Prognóstico',form.prognostico],['Conduta',form.conduta],['Frequência',form.frequencia_sessoes]]],
-        ['CIF', cif.map(x => [`${x.code} — ${x.description}`, `Categoria: ${x.category}; Qualificador: ${x.qualifier}; ${x.observation}` ] as [string,string]),
+        ['CIF', cif.map(x => [`${x.code} — ${x.description}`, `Categoria: ${x.category}; Qualificador: ${x.qualifier}; ${x.observation}`] as [string,string])],
       ];
       for (const [title, data] of sections) {
         const usable = data.filter(r => r[1] || r[0] === 'Escala');
