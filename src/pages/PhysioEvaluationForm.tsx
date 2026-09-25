@@ -160,7 +160,7 @@ export default function PhysioEvaluationWorkspace() {
         if (evError) {
           toast.error('Não foi possível carregar a avaliação.');
         } else {
-          setType((ev.tipo_avaliacao || 'geral') as EvaluationType);
+          setType((TYPES.some(t => t.id === ev.tipo_avaliacao) ? ev.tipo_avaliacao : 'personalizada') as EvaluationType);
           setPatientId(ev.paciente_id);
           setForm({ ...INITIAL, ...ev.dados_especificos, ...ev });
           setCif(Array.isArray(ev.cif_itens) ? ev.cif_itens : []);
