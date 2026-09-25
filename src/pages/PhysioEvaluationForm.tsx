@@ -99,7 +99,7 @@ function ageFromDate(date?: string | null) {
 function Section({ title, children, icon: Icon = ClipboardList }: any) {
   return (
     <section className="rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none backdrop-blur-xl overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 dark:border-white/10 dark:bg-transparent flex items-center gap-3">
+      <div className="px-6 py-4 border-b border-slate-200 bg-white/70 dark:border-white/10 dark:bg-transparent flex items-center gap-3">
         <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400"><Icon size={18} /></div>
         <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{title}</h2>
       </div>
@@ -114,10 +114,10 @@ function Field({ label, value, onChange, placeholder = '', type = 'text', min, m
       <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">{label}</span>
       {type === 'textarea' ? (
         <textarea value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full min-h-24 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10 resize-y" />
+          className="w-full min-h-24 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-900 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10 resize-y" />
       ) : (
         <input type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full h-11 rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10" />
+          className="w-full h-11 rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-900 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10" />
       )}
     </label>
   );
@@ -395,11 +395,11 @@ export default function PhysioEvaluationWorkspace() {
                 <button type="button" onClick={()=>setShowCreatePatient(true)} className="h-12 px-5 rounded-2xl bg-sky-500 text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-sky-600 transition-colors"><Plus size={18}/> Novo paciente</button>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">Você pode vincular um paciente já cadastrado ou criar um novo paciente agora.</p>
-              {showCreatePatient && <div className="rounded-[1.5rem] border border-sky-200 bg-sky-50 dark:border-sky-500/20 dark:bg-sky-500/5 p-5 space-y-4">
+              {showCreatePatient && <div className="rounded-[1.5rem] border border-slate-200 bg-white shadow-sm dark:border-sky-500/20 dark:bg-sky-500/5 p-5 space-y-4">
                 <div className="flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">Cadastrar paciente</h3><p className="text-xs text-slate-600 dark:text-slate-400 mt-1">O paciente será criado no seu cadastro e vinculado automaticamente a esta avaliação.</p></div><button type="button" onClick={()=>setShowCreatePatient(false)} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Cancelar</button></div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <Field label="Nome completo *" value={newPatient.nome_completo} onChange={(v:string)=>setNewPatient(p=>({...p,nome_completo:v}))} placeholder="Nome completo"/>
-                  <Field label="Data de nascimento" value={newPatient.data_nascimento} onChange={(v:string)=>setNewPatient(p=>({...p,data_nascimento:v}))} type="date"/>
+                  <div className="min-w-0"><Field label="Nome completo *" value={newPatient.nome_completo} onChange={(v:string)=>setNewPatient(p=>({...p,nome_completo:v}))} placeholder="Nome completo"/></div>
+                  <div className="md:max-w-[220px]"><Field label="Data de nascimento" value={newPatient.data_nascimento} onChange={(v:string)=>setNewPatient(p=>({...p,data_nascimento:v}))} type="date"/></div>
                   <Field label="Telefone" value={newPatient.telefone} onChange={(v:string)=>setNewPatient(p=>({...p,telefone:v}))} placeholder="(00) 00000-0000"/>
                   <Field label="E-mail" value={newPatient.email} onChange={(v:string)=>setNewPatient(p=>({...p,email:v}))} type="email"/>
                   <div className="md:col-span-2"><Field label="Diagnóstico / motivo do atendimento" value={newPatient.diagnostico} onChange={(v:string)=>setNewPatient(p=>({...p,diagnostico:v}))} type="textarea" placeholder="Opcional"/></div>
@@ -473,7 +473,7 @@ export default function PhysioEvaluationWorkspace() {
               <button onClick={addTest} className="px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">+ Teste personalizado</button>
             </div>
             <div className="space-y-3">
-              {tests.map((t,i)=><div key={i} className="grid md:grid-cols-[1.3fr_1fr_0.6fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/5 dark:border-white/5">
+              {tests.map((t,i)=><div key={i} className="grid md:grid-cols-[1.3fr_1fr_0.6fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/5">
                 <input value={t.name} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder="Teste / escala" className="input-compact"/>
                 <input value={t.result} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,result:e.target.value}:x))} placeholder="Resultado" className="input-compact"/>
                 <input value={t.unit} onChange={e=>setTests(a=>a.map((x,j)=>j===i?{...x,unit:e.target.value}:x))} placeholder="Unid." className="input-compact"/>
@@ -491,7 +491,7 @@ export default function PhysioEvaluationWorkspace() {
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">Registre o domínio, qualificador e contexto funcional observado. Os códigos abaixo são referências da CIF; o profissional deve confirmar a pertinência clínica antes de registrar.</p>
             <div className="flex flex-wrap gap-2 mb-5">{CIF_SUGGESTIONS.map(s=><button key={s.code} onClick={()=>addCif(s)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-700 dark:text-slate-300 hover:border-sky-500/40">{s.code} · {s.description}</button>)}<button onClick={()=>addCif()} className="px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">+ Item CIF</button></div>
             <div className="space-y-4">
-              {cif.map((x,i)=><div key={i} className="grid md:grid-cols-[0.55fr_1.6fr_1fr_0.55fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/5 dark:border-white/5">
+              {cif.map((x,i)=><div key={i} className="grid md:grid-cols-[0.55fr_1.6fr_1fr_0.55fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/5">
                 <input value={x.code} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,code:e.target.value}:v))} placeholder="Código" className="input-compact"/>
                 <input value={x.description} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,description:e.target.value}:v))} placeholder="Descrição" className="input-compact"/>
                 <select value={x.category} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,category:e.target.value}:v))} className="input-compact"><option value="funcoes">Funções</option><option value="estruturas">Estruturas</option><option value="atividade_participacao">Atividade/participação</option><option value="ambiental">Ambiental</option></select>
