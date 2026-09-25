@@ -57,14 +57,14 @@ export default function PhysioEvaluationsList() {
 
   return (
     <ProGuard>
-      <div className="space-y-8 max-w-6xl mx-auto pb-20">
+      <div className="evaluation-workspace space-y-8 max-w-6xl mx-auto pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               <Stethoscope className="text-sky-500" size={36} />
               Fichas de Avaliação
             </h1>
-            <p className="text-slate-400 font-medium tracking-wide">
+            <p className="text-slate-600 dark:text-slate-400 font-medium tracking-wide">
               Avaliação fisioterapêutica completa e histórico clínico dos seus pacientes.
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function PhysioEvaluationsList() {
             placeholder="Buscar por nome do paciente ou diagnóstico..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-5 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl outline-none focus:ring-2 focus:ring-sky-500/50 transition-all text-white placeholder:text-slate-600 font-medium"
+            className="w-full pl-14 pr-6 py-5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-3xl outline-none focus:ring-2 focus:ring-sky-500/50 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 font-medium"
           />
         </div>
 
@@ -93,15 +93,15 @@ export default function PhysioEvaluationsList() {
             <Loader2 className="animate-spin text-sky-500" size={48} />
           </div>
         ) : filteredEvaluations.length === 0 ? (
-          <div className="bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-white/10 text-center shadow-2xl">
-            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-slate-700 mx-auto mb-6">
+          <div className="bg-white dark:bg-slate-900/50 backdrop-blur-xl p-20 rounded-[3rem] border border-slate-200 dark:border-white/10 text-center shadow-xl dark:shadow-2xl">
+            <div className="w-20 h-20 bg-slate-100 dark:bg-white/5 rounded-3xl flex items-center justify-center text-slate-400 dark:text-slate-700 mx-auto mb-6">
               <FileText size={40} />
             </div>
-            <h3 className="text-2xl font-black text-white">Nenhuma ficha encontrada</h3>
-            <p className="text-slate-500 mt-2 font-medium">Você ainda não realizou avaliações ou a busca não retornou resultados.</p>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Nenhuma ficha encontrada</h3>
+            <p className="text-slate-600 dark:text-slate-500 mt-2 font-medium">Você ainda não realizou avaliações ou a busca não retornou resultados.</p>
             <button 
               onClick={() => navigate('/physio/evaluation')}
-              className="mt-8 px-8 py-3 bg-white/5 text-sky-400 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10"
+              className="mt-8 px-8 py-3 bg-sky-50 dark:bg-white/5 text-sky-600 dark:text-sky-400 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-sky-100 dark:hover:bg-white/10 transition-all border border-sky-200 dark:border-white/10"
             >
               Ir para Meus Pacientes
             </button>
@@ -114,7 +114,7 @@ export default function PhysioEvaluationsList() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.05 }}
-                className="bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-xl overflow-hidden hover:border-sky-500/30 transition-all group cursor-pointer"
+                className="bg-white dark:bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-xl overflow-hidden hover:border-sky-500/30 transition-all group cursor-pointer"
                 onClick={() => navigate(`/physio/evaluation/${ev.id}`)}
               >
                 <div className="p-8 space-y-6">
@@ -123,8 +123,8 @@ export default function PhysioEvaluationsList() {
                       <FileText size={24} />
                     </div>
                     <div className="text-right">
-                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Data da Ficha</span>
-                       <span className="text-sm font-bold text-white flex items-center gap-2 justify-end">
+                       <span className="text-[10px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-widest block mb-1">Data da Ficha</span>
+                       <span className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 justify-end">
                          <Calendar size={14} className="text-sky-500" />
                          {formatDate(ev.created_at)}
                        </span>
@@ -132,21 +132,21 @@ export default function PhysioEvaluationsList() {
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-white group-hover:text-sky-400 transition-colors flex items-center gap-2">
-                      <User size={18} className="text-slate-600" />
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors flex items-center gap-2">
+                      <User size={18} className="text-slate-500 dark:text-slate-600" />
                       {ev.paciente?.nome_completo || 'Paciente não encontrado'}
                     </h3>
-                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Diagnóstico Fisio.</p>
-                      <p className="text-xs text-slate-400 font-medium line-clamp-2 italic">
+                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
+                      <p className="text-[10px] font-black text-slate-500 dark:text-slate-600 uppercase tracking-widest mb-1">Diagnóstico Fisio.</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium line-clamp-2 italic">
                         {ev.diagnostico_fisio || "Nenhum diagnóstico registrado..."}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Acessar Ficha</span>
-                     <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-slate-500 group-hover:bg-sky-500 group-hover:text-white transition-all shadow-inner">
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-white/5">
+                     <span className="text-[10px] font-black text-slate-500 dark:text-slate-600 uppercase tracking-widest">Acessar Ficha</span>
+                     <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center text-slate-500 group-hover:bg-sky-500 group-hover:text-white transition-all shadow-inner">
                         <ArrowRight size={18} />
                      </div>
                   </div>
