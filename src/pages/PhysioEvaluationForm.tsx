@@ -98,7 +98,7 @@ function ageFromDate(date?: string | null) {
 
 function Section({ title, children, icon: Icon = ClipboardList }: any) {
   return (
-    <section className="rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none backdrop-blur-xl overflow-hidden">
+    <section className="rounded-[2rem] border border-slate-200 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-slate-900/60 dark:shadow-none backdrop-blur-xl overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-200 bg-white/70 dark:border-white/10 dark:bg-transparent flex items-center gap-3">
         <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400"><Icon size={18} /></div>
         <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{title}</h2>
@@ -114,10 +114,10 @@ function Field({ label, value, onChange, placeholder = '', type = 'text', min, m
       <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-500">{label}</span>
       {type === 'textarea' ? (
         <textarea value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full min-h-24 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-900 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10 resize-y" />
+          className="w-full min-h-24 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 px-4 py-3 text-sm text-slate-950 dark:text-white placeholder:text-slate-400 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10 resize-y" />
       ) : (
         <input type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full h-11 rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-600 dark:text-slate-400 dark:placeholder:text-slate-900 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10" />
+          className="w-full h-11 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:text-slate-400 dark:placeholder:text-slate-600 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/10" />
       )}
     </label>
   );
@@ -352,11 +352,11 @@ export default function PhysioEvaluationWorkspace() {
       <div className="max-w-7xl mx-auto pb-24 space-y-7">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/physio/evaluations')} className="p-3 rounded-2xl bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white border border-white/10"><ArrowLeft size={20}/></button>
+            <button onClick={() => navigate('/physio/evaluations')} className="p-3 rounded-2xl bg-white/5 text-slate-900 dark:text-slate-400 hover:text-slate-900 dark:text-white border border-white/10"><ArrowLeft size={20}/></button>
             <div>
               <p className="text-[10px] uppercase tracking-[0.25em] font-black text-sky-400">Prontuário clínico</p>
               <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Avaliação fisioterapêutica</h1>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Ficha estruturada por área, com CIF e PDF profissional.</p>
+              <p className="text-slate-900 dark:text-slate-400 text-sm mt-1">Ficha estruturada por área, com CIF e PDF profissional.</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -367,11 +367,11 @@ export default function PhysioEvaluationWorkspace() {
 
         {!type && (
           <div className="space-y-5">
-            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><Stethoscope size={20} className="text-sky-400"/><span className="font-black">1. Escolha a área da avaliação</span></div>
+            <div className="flex items-center gap-2 text-slate-900 dark:text-slate-300"><Stethoscope size={20} className="text-sky-400"/><span className="font-black">1. Escolha a área da avaliação</span></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {TYPES.map(item => { const Icon=item.icon; return <button key={item.id} onClick={() => {setType(item.id);setStep(1)}} className="text-left rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_6px_22px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/60 hover:shadow-[0_12px_28px_rgba(14,165,233,0.10)] dark:border-white/10 dark:bg-slate-900/60 dark:hover:border-sky-500/40 dark:hover:bg-slate-900 transition-all group">
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform"><Icon size={25}/></div>
-                <h2 className="text-lg font-black text-slate-900 dark:text-white">{item.title}</h2><p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{item.description}</p>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white">{item.title}</h2><p className="text-sm text-slate-900 dark:text-slate-400 mt-2 leading-relaxed">{item.description}</p>
               </button>})}
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function PhysioEvaluationWorkspace() {
 
         {type && step >= 1 && (
           <div className="flex flex-wrap gap-2">
-            {['Paciente','Anamnese','Exame físico','Testes','CIF','Plano'].map((x,i)=><button key={x} onClick={()=>setStep(i+1)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${step===i+1?'bg-sky-500 text-slate-900 dark:text-white border-sky-400':'bg-white/5 text-slate-600 dark:text-slate-400 border-white/10'}`}>{i+1}. {x}</button>)}
+            {['Paciente','Anamnese','Exame físico','Testes','CIF','Plano'].map((x,i)=><button key={x} onClick={()=>setStep(i+1)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${step===i+1?'bg-sky-500 text-slate-900 dark:text-white border-sky-400':'bg-white/5 text-slate-900 dark:text-slate-400 border-white/10'}`}>{i+1}. {x}</button>)}
           </div>
         )}
 
@@ -394,9 +394,9 @@ export default function PhysioEvaluationWorkspace() {
                 </div>
                 <button type="button" onClick={()=>setShowCreatePatient(true)} className="h-12 px-5 rounded-2xl bg-sky-500 text-white font-black text-sm flex items-center justify-center gap-2 hover:bg-sky-600 transition-colors"><Plus size={18}/> Novo paciente</button>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Você pode vincular um paciente já cadastrado ou criar um novo paciente agora.</p>
-              {showCreatePatient && <div className="rounded-[1.5rem] border border-slate-200 bg-white shadow-sm dark:border-sky-500/20 dark:bg-sky-500/5 p-5 space-y-4">
-                <div className="flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">Cadastrar paciente</h3><p className="text-xs text-slate-600 dark:text-slate-400 mt-1">O paciente será criado no seu cadastro e vinculado automaticamente a esta avaliação.</p></div><button type="button" onClick={()=>setShowCreatePatient(false)} className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Cancelar</button></div>
+              <p className="text-xs text-slate-900 dark:text-slate-400">Você pode vincular um paciente já cadastrado ou criar um novo paciente agora.</p>
+              {showCreatePatient && <div className="rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] dark:border-sky-500/20 dark:bg-sky-500/5 dark:shadow-none p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3"><div><h3 className="font-black text-slate-900 dark:text-white">Cadastrar paciente</h3><p className="text-xs text-slate-900 dark:text-slate-400 mt-1">O paciente será criado no seu cadastro e vinculado automaticamente a esta avaliação.</p></div><button type="button" onClick={()=>setShowCreatePatient(false)} className="text-xs font-bold text-slate-900 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Cancelar</button></div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="min-w-0"><Field label="Nome completo *" value={newPatient.nome_completo} onChange={(v:string)=>setNewPatient(p=>({...p,nome_completo:v}))} placeholder="Nome completo"/></div>
                   <div className="md:max-w-[220px]"><Field label="Data de nascimento" value={newPatient.data_nascimento} onChange={(v:string)=>setNewPatient(p=>({...p,data_nascimento:v}))} type="date"/></div>
@@ -406,7 +406,7 @@ export default function PhysioEvaluationWorkspace() {
                 </div>
                 <div className="flex justify-end"><button type="button" disabled={creatingPatient || !newPatient.nome_completo.trim()} onClick={createPatient} className="px-5 py-3 rounded-2xl bg-emerald-500 text-white font-black text-sm disabled:opacity-50 flex items-center gap-2">{creatingPatient ? <Loader2 size={17} className="animate-spin"/> : <Plus size={17}/>} Cadastrar e vincular</button></div>
               </div>}
-              {patient && <div className="rounded-2xl bg-sky-50 border border-sky-200 dark:bg-sky-500/5 dark:border-sky-500/20 p-5 flex items-center justify-between"><div><p className="text-xs font-black text-sky-400 uppercase tracking-widest">Paciente selecionado</p><h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">{patient.nome_completo}</h3><p className="text-sm text-slate-600 dark:text-slate-400">{ageFromDate(patient.data_nascimento) ? `${ageFromDate(patient.data_nascimento)} anos` : 'Idade não informada'}{patient.diagnostico ? ` • ${patient.diagnostico}` : ''}</p></div><CheckCircle2 className="text-emerald-400"/></div>}
+              {patient && <div className="rounded-2xl bg-sky-50 border border-sky-200 dark:bg-sky-500/5 dark:border-sky-500/20 p-5 flex items-center justify-between"><div><p className="text-xs font-black text-sky-400 uppercase tracking-widest">Paciente selecionado</p><h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">{patient.nome_completo}</h3><p className="text-sm text-slate-900 dark:text-slate-400">{ageFromDate(patient.data_nascimento) ? `${ageFromDate(patient.data_nascimento)} anos` : 'Idade não informada'}{patient.diagnostico ? ` • ${patient.diagnostico}` : ''}</p></div><CheckCircle2 className="text-emerald-400"/></div>}
               <div className="flex justify-end"><button disabled={!patientId} onClick={()=>setStep(2)} className="px-6 py-3 rounded-2xl bg-sky-500 text-slate-900 dark:text-white font-black text-sm disabled:opacity-40">Continuar</button></div>
             </div>
           </Section>
@@ -469,7 +469,7 @@ export default function PhysioEvaluationWorkspace() {
         {type && step === 3 && (
           <Section title="Testes e escalas" icon={Activity}>
             <div className="flex flex-wrap gap-2 mb-5">
-              {specificLabels[type].slice(0,5).map(x=><button key={x} onClick={()=>{addTest(); setTests(prev=>[...prev.slice(0,-1),{name:x,result:'',unit:'',interpretation:''}])}} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-700 dark:text-slate-300 hover:border-sky-500/40">+ {x}</button>)}
+              {specificLabels[type].slice(0,5).map(x=><button key={x} onClick={()=>{addTest(); setTests(prev=>[...prev.slice(0,-1),{name:x,result:'',unit:'',interpretation:''}])}} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-900 dark:text-slate-300 hover:border-sky-500/40">+ {x}</button>)}
               <button onClick={addTest} className="px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">+ Teste personalizado</button>
             </div>
             <div className="space-y-3">
@@ -488,8 +488,8 @@ export default function PhysioEvaluationWorkspace() {
 
         {type && step === 4 && (
           <Section title="CIF — Classificação Internacional de Funcionalidade" icon={ShieldCheck}>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">Registre o domínio, qualificador e contexto funcional observado. Os códigos abaixo são referências da CIF; o profissional deve confirmar a pertinência clínica antes de registrar.</p>
-            <div className="flex flex-wrap gap-2 mb-5">{CIF_SUGGESTIONS.map(s=><button key={s.code} onClick={()=>addCif(s)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-700 dark:text-slate-300 hover:border-sky-500/40">{s.code} · {s.description}</button>)}<button onClick={()=>addCif()} className="px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">+ Item CIF</button></div>
+            <p className="text-sm text-slate-900 dark:text-slate-400 mb-5">Registre o domínio, qualificador e contexto funcional observado. Os códigos abaixo são referências da CIF; o profissional deve confirmar a pertinência clínica antes de registrar.</p>
+            <div className="flex flex-wrap gap-2 mb-5">{CIF_SUGGESTIONS.map(s=><button key={s.code} onClick={()=>addCif(s)} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-900 dark:text-slate-300 hover:border-sky-500/40">{s.code} · {s.description}</button>)}<button onClick={()=>addCif()} className="px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">+ Item CIF</button></div>
             <div className="space-y-4">
               {cif.map((x,i)=><div key={i} className="grid md:grid-cols-[0.55fr_1.6fr_1fr_0.55fr_1.5fr_auto] gap-3 p-4 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/5">
                 <input value={x.code} onChange={e=>setCif(a=>a.map((v,j)=>j===i?{...v,code:e.target.value}:v))} placeholder="Código" className="input-compact"/>
@@ -518,7 +518,7 @@ export default function PhysioEvaluationWorkspace() {
               </div>
             </Section>
             <div className="rounded-[2rem] border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 p-6 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
-              <div><div className="flex items-center gap-2 text-emerald-400 font-black"><CheckCircle2 size={20}/> Ficha pronta para finalização</div><p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Salve a avaliação para vinculá-la ao histórico do paciente e gerar o PDF.</p></div>
+              <div><div className="flex items-center gap-2 text-emerald-400 font-black"><CheckCircle2 size={20}/> Ficha pronta para finalização</div><p className="text-sm text-slate-900 dark:text-slate-400 mt-1">Salve a avaliação para vinculá-la ao histórico do paciente e gerar o PDF.</p></div>
               <div className="flex gap-2"><button onClick={save} disabled={saving || !!integrityHash} className="px-6 py-3 rounded-2xl bg-emerald-500 text-slate-900 dark:text-white font-black flex items-center gap-2 disabled:opacity-50"><Save size={17}/>{saving?'Salvando...':'Salvar e finalizar'}</button>{savedId&&<button onClick={generatePdf} className="px-6 py-3 rounded-2xl bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white font-black flex items-center gap-2"><FileDown size={17}/> Gerar PDF</button>}</div>
             </div>
             {integrityHash && <div className="text-[11px] text-slate-600 dark:text-slate-500 flex items-center gap-2"><ShieldCheck size={14}/> Registro protegido por integridade documental.</div>}
